@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Quadro de Horários - Escola Municipal Rui Barbosa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --portugues: #3498db;
+            --matematica: #e74c3c;
+            --ciencias: #2ecc71;
+            --geografia: #f39c12;
+            --historia: #9b59b6;
+            --ingles: #e67e22;
+            --ed-fisica: #27ae60;
+            --arte: #d35400;
+            --htpc: #34495e;
+            --intervalo: #95a5a6;
+        }
+
+        .materia-portugues { background-color: var(--portugues); }
+        .materia-matematica { background-color: var(--matematica); }
+        .materia-ciencias { background-color: var(--ciencias); }
+        .materia-geografia { background-color: var(--geografia); }
+        .materia-historia { background-color: var(--historia); }
+        .materia-ingles { background-color: var(--ingles); }
+        .materia-ed-fisica { background-color: var(--ed-fisica); }
+        .materia-arte { background-color: var(--arte); }
+        .materia-htpc { background-color: var(--htpc); }
+        .materia-intervalo { background-color: var(--intervalo); }
+
+        .hover-scale {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .hover-scale:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .turma-seletor {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+        }
+
+        .turma-ativa {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <header class="text-center mb-8 animate-fade-in">
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                <img src="http://googleusercontent.com/file_content/0" alt="Foto da fachada da Escola Municipal Rui Barbosa com pintura colorida no portão" class="w-full h-48 object-cover rounded-lg mb-4" />
+                <h1 class="text-4xl font-bold text-gray-800 mb-2">Quadro de Horários</h1>
+                <h2 class="text-2xl text-indigo-600 font-semibold mb-4">Escola Municipal Rui Barbosa</h2>
+                <p class="text-gray-600">Ano Letivo 2025 - Período da Tarde</p>
+            </div>
+        </header>
+
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6 animate-fade-in" style="animation-delay: 0.1s;">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4 text-center">Selecione a Turma</h3>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-4 justify-items-center">
+                <div class="w-full text-center">
+                    <span class="text-sm font-bold text-gray-500 block mb-1">6º Ano</span>
+                    <div class="flex gap-2 justify-center">
+                        <button class="turma-seletor px-4 py-2 border rounded-lg shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500" data-turma="6a">6A</button>
+                        <button class="turma-seletor px-4 py-2 border rounded-lg shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500" data-turma="6b">6B</button>
+                        <button class="turma-seletor px-4 py-2 border rounded-lg shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500" data-turma="6c">6C</button>
+                    </div>
+                </div>
+                
+                <div class="w-full text-center">
+                    <span class="text-sm font-bold text-gray-500 block mb-1">7º Ano</span>
+                    <div class="flex gap-2 justify-center">
+                        <button class="turma-seletor px-4 py-2 border rounded-lg shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500" data-turma="7a">7A</button>
+                        <button class="turma-seletor px-4 py-2 border rounded-lg shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500" data-turma="7b">7B</button>
+                        <button class="turma-seletor px-4 py-2 border rounded-lg shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500" data-turma="7c">7C</button>
+                    </div>
+                </div>
+
+                <div class="w-full text-center">
+                    <span class="text-sm font-bold text-gray-500 block mb-1">8º Ano</span>
+                    <div class="flex gap-2 justify-center">
+                        <button class="turma-seletor px-4 py-2 border rounded-lg shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500" data-turma="8a">8A</button>
+                        <button class="turma-seletor px-4 py-2 border rounded-lg shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring-gray-500" data-turma="8b">8B</button>
+                        <button class="turma-seletor px-4 py-2 border rounded-lg shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500" data-turma="8c">8C</button>
+                    </div>
+                </div>
+
+                <div class="w-full text-center">
+                    <span class="text-sm font-bold text-gray-500 block mb-1">9º Ano</span>
+                    <div class="flex gap-2 justify-center">
+                        <button class="turma-seletor px-4 py-2 border rounded-lg shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500" data-turma="9a">9A</button>
+                        <button class="turma-seletor px-4 py-2 border rounded-lg shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500" data-turma="9b">9B</button>
+                        <button class="turma-seletor px-4 py-2 border rounded-lg shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500" data-turma="9c">9C</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-indigo-100 rounded-xl p-4 mb-6 text-center animate-fade-in" style="animation-delay: 0.2s;">
+            <h2 class="text-2xl font-bold text-indigo-800" id="turma-atual"></h2>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden animate-fade-in" style="animation-delay: 0.3s;">
+            <div class="overflow-x-auto">
+                <table class="w-full" id="tabela-horarios">
+                    <thead class="bg-indigo-600 text-white">
+                        <tr>
+                            <th class="px-6 py-4 text-left font-semibold">Horário</th>
+                            <th class="px-6 py-4 text-center font-semibold">Segunda-feira</th>
+                            <th class="px-6 py-4 text-center font-semibold">Terça-feira</th>
+                            <th class="px-6 py-4 text-center font-semibold">Quarta-feira</th>
+                            <th class="px-6 py-4 text-center font-semibold">Quinta-feira</th>
+                            <th class="px-6 py-4 text-center font-semibold">Sexta-feira</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="mt-8 bg-white rounded-xl shadow-lg p-6 animate-fade-in" style="animation-delay: 0.4s;">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Legenda de Disciplinas</h3>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                <div class="flex items-center">
+                    <div class="w-4 h-4 bg-blue-500 rounded mr-2"></div>
+                    <span class="text-sm">Português</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-4 h-4 bg-red-500 rounded mr-2"></div>
+                    <span class="text-sm">Matemática</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-4 h-4 bg-green-500 rounded mr-2"></div>
+                    <span class="text-sm">Ciências</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-4 h-4 bg-yellow-500 rounded mr-2"></div>
+                    <span class="text-sm">Geografia</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-4 h-4 bg-purple-500 rounded mr-2"></div>
+                    <span class="text-sm">História</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-4 h-4 bg-orange-500 rounded mr-2"></div>
+                    <span class="text-sm">Inglês</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-4 h-4 bg-teal-500 rounded mr-2"></div>
+                    <span class="text-sm">Ed. Física</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-4 h-4 bg-orange-700 rounded mr-2"></div>
+                    <span class="text-sm">Arte</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-4 h-4 bg-gray-600 rounded mr-2"></div>
+                    <span class="text-sm">HTPC</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-6 bg-blue-50 rounded-xl p-6 animate-fade-in" style="animation-delay: 0.5s;">
+            <h3 class="text-lg font-semibold text-blue-800 mb-3">Informações da Turma</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
+                <div>
+                    <strong>Período:</strong> Tarde (13:00 às 17:50)
+                </div>
+                <div>
+                    <strong>Total de aulas:</strong> <span id="total-aulas"></span> aulas semanais
+                </div>
+                <div>
+                    <strong>Professores:</strong> Variados por disciplina
+                </div>
+                <div>
+                    <strong>Sala:</strong> <span id="sala-turma"></span>
+                </div>
+            </div>
+        </div>
+
+        <footer class="mt-8 text-center text-gray-600 text-sm">
+            <p>© 2025 Escola Municipal Rui Barbosa - Todos os direitos reservados.</p>
+            <p>Direitos de imagem © Bryan de Sá Baduris.</p>
+        </footer>
+    </div>
+
+    <script>
+        const horarioPadrao = [
+            ['Português', 'Matemática', 'Geografia', 'Ciências', 'História'],
+            ['Inglês', 'Ed. Física', 'Arte', 'Português', 'Matemática'],
+            ['INTERVALO', 'INTERVALO', 'INTERVALO', 'INTERVALO', 'INTERVALO'],
+            ['Ciências', 'Matemática', 'Geografia', 'Português', 'Ed. Física'],
+            ['História', 'Português', 'Inglês', 'Arte', 'Ciências'],
+            ['Matemática', 'Geografia', 'História', 'Ciências', 'Português'],
+            ['Português', 'Matemática', 'HTPC', 'Geografia', 'Matemática']
+        ];
+
+        const horariosTurmas = {
+            '6a': {
+                nome: '6º Ano A',
+                sala: 'Sala 7',
+                horarios: horarioPadrao
+            },
+            '6b': {
+                nome: '6º Ano B',
+                sala: 'Sala 8',
+                horarios: horarioPadrao
+            },
+            '6c': {
+                nome: '6º Ano C',
+                sala: 'Sala 9',
+                horarios: horarioPadrao
+            },
+            '7a': {
+                nome: '7º Ano A',
+                sala: 'Sala 10',
+                horarios: horarioPadrao
+            },
+            '7b': {
+                nome: '7º Ano B',
+                sala: 'Sala 11',
+                horarios: horarioPadrao
+            },
+            '7c': {
+                nome: '7º Ano C',
+                sala: 'Sala 12',
+                horarios: horarioPadrao
+            },
+            '8a': {
+                nome: '8º Ano A',
+                sala: 'Sala 13',
+                horarios: horarioPadrao
+            },
+            '8b': {
+                nome: '8º Ano B',
+                sala: 'Sala 14',
+                horarios: horarioPadrao
+            },
+            '8c': {
+                nome: '8º Ano C',
+                sala: 'Sala 14',
+                horarios: horarioPadrao
+            },
+            '9a': {
+                nome: '9º Ano A',
+                sala: 'Sala 15',
+                horarios: horarioPadrao
+            },
+            '9b': {
+                nome: '9º Ano B',
+                sala: 'Sala 16',
+                horarios: horarioPadrao
+            },
+            '9c': {
+                nome: '9º Ano C',
+                sala: 'Sala 17',
+                horarios: horarioPadrao
+            }
+        };
+
+        const turmas = document.querySelectorAll('.turma-seletor');
+        const tabelaHorarios = document.getElementById('tabela-horarios');
+        const turmaAtualH2 = document.getElementById('turma-atual');
+        const salaTurmaSpan = document.getElementById('sala-turma');
+        const totalAulasSpan = document.getElementById('total-aulas');
+        
+        let turmaAtiva = '7c';
+
+        function renderizarTabela(turma) {
+            const dadosTurma = horariosTurmas[turma];
+            if (!dadosTurma) {
+                // Se a turma não tiver dados, limpa a tabela
+                tabelaHorarios.querySelector('tbody').innerHTML = '';
+                turmaAtualH2.textContent = '';
+                salaTurmaSpan.textContent = '';
+                totalAulasSpan.textContent = '0';
+                return;
+            }
+            
+            turmaAtualH2.textContent = dadosTurma.nome;
+            salaTurmaSpan.textContent = dadosTurma.sala;
+
+            let totalAulas = 0;
+            let tbodyHtml = '';
+            
+            const horarios = [
+                '13:00 - 13:45',
+                '13:45 - 14:30',
+                '14:30 - 14:50', // Intervalo
+                '14:50 - 15:35',
+                '15:35 - 16:20',
+                '16:20 - 17:05',
+                '17:05 - 17:50'
+            ];
+
+            if (dadosTurma.horarios.length > 0) {
+              dadosTurma.horarios.forEach((dia, index) => {
+                  const horarioAtual = horarios[index];
+                  tbodyHtml += `<tr class="border-b border-gray-200 hover:bg-gray-50 hover-scale animate-fade-in" style="animation-delay: ${0.4 + index * 0.1}s;">`;
+                  tbodyHtml += `<td class="px-6 py-3 text-sm font-medium text-gray-700">${horarioAtual}</td>`;
+                  
+                  dia.forEach(materia => {
+                      const materiaClass = materia === 'INTERVALO' ? 'materia-intervalo' : `materia-${materia.toLowerCase().replace('.', '')}`;
+                      const textoMateria = materia === 'INTERVALO' ? 'Intervalo' : materia;
+                      
+                      if (materia !== 'INTERVALO') {
+                          totalAulas++;
+                      }
+
+                      tbodyHtml += `<td class="px-6 py-3 text-center font-bold text-white rounded-md shadow-md hover-scale ${materiaClass}">${textoMateria}</td>`;
+                  });
+
+                  tbodyHtml += `</tr>`;
+              });
+            } else {
+              tbodyHtml = `<tr class="border-b border-gray-200"><td colspan="6" class="px-6 py-12 text-center text-gray-500 font-semibold">Nenhum horário disponível para esta turma.</td></tr>`;
+            }
+            
+            tabelaHorarios.querySelector('tbody').innerHTML = tbodyHtml;
+            totalAulasSpan.textContent = totalAulas;
+        }
+
+        turmas.forEach(botao => {
+            botao.addEventListener('click', () => {
+                turmas.forEach(b => b.classList.remove('turma-ativa'));
+                botao.classList.add('turma-ativa');
+                turmaAtiva = botao.dataset.turma;
+                renderizarTabela(turmaAtiva);
+            });
+        });
+
+        // Selecionar a turma padrão na primeira carga
+        document.addEventListener('DOMContentLoaded', () => {
+            const turmaPadrao = '7c';
+            const botaoPadrao = document.querySelector(`[data-turma="${turmaPadrao}"]`);
+            if (botaoPadrao) {
+                botaoPadrao.click();
+            } else {
+                renderizarTabela(turmaPadrao);
+            }
+        });
+    </script>
+</body>
+</html>
