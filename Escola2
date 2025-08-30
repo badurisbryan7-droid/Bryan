@@ -1,0 +1,2311 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Quadro de Horários - Escola Municipal Rui Barbosa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --portugues: #3498db;
+            --matematica: #e74c3c;
+            --ciencias: #2ecc71;
+            --geografia: #f39c12;
+            --historia: #9b59b6;
+            --ingles: #e67e22;
+            --ed-fisica: #27ae60;
+            --arte: #d35400;
+            --htpc: #34495e;
+            --intervalo: #95a5a6;
+            --professor: #1abc9c;
+            --diretor: #f1c40f;
+        }
+
+        .materia-portugues { background-color: var(--portugues); }
+        .materia-matematica { background-color: var(--matematica); }
+        .materia-ciencias { background-color: var(--ciencias); }
+        .materia-geografia { background-color: var(--geografia); }
+        .materia-historia { background-color: var(--historia); }
+        .materia-ingles { background-color: var(--ingles); }
+        .materia-ed-fisica { background-color: var(--ed-fisica); }
+        .materia-arte { background-color: var(--arte); }
+        .materia-htpc { background-color: var(--htpc); }
+        .materia-intervalo { background-color: var(--intervalo); }
+        .materia-professor { background-color: var(--professor); }
+        .materia-diretor { background-color: var(--diretor); }
+
+        .hover-scale {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .hover-scale:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .turma-seletor {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+        }
+
+        .turma-ativa {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .coluna-brilhando {
+            filter: brightness(1.2);
+            background-color: rgba(255, 255, 0, 0.1); 
+            transition: background-color 0.5s ease;
+        }
+
+        .celula-brilhando {
+            filter: brightness(1.5);
+            box-shadow: 0 0 15px rgba(255, 255, 0, 0.6); 
+            z-index: 10;
+        }
+
+        .presente { background-color: #2ecc71; color: white; }
+        .ausente { background-color: #e74c3c; color: white; }
+        .justificado { background-color: #f1c40f; color: black; }
+        .incident { background-color: #e74c3c; color: white; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen flex items-center justify-center p-4">
+
+    <div id="login-container" class="w-full max-w-md bg-white rounded-xl shadow-lg p-8 animate-fade-in">
+        <div class="text-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">Acesso ao Sistema</h1>
+            <p class="text-gray-600 mt-2">Use seu login e senha para acessar.</p>
+        </div>
+        <form id="login-form" class="space-y-4">
+            <div>
+                <label for="login-input" class="block text-sm font-medium text-gray-700">Login</label>
+                <input type="text" id="login-input" name="login" required class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+            </div>
+            <div>
+                <label for="password-input" class="block text-sm font-medium text-gray-700">Senha</label>
+                <div class="relative mt-1">
+                    <input type="password" id="password-input" name="senha" required class="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                    <button type="button" id="toggle-password" class="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5">
+                        <span id="toggle-icon">👁️</span>
+                    </button>
+                </div>
+            </div>
+            <div>
+                <label for="captcha-input" class="block text-sm font-medium text-gray-700">CAPTCHA: Resolva a soma</label>
+                <div class="mt-1 flex items-center space-x-2">
+                    <span id="captcha-question" class="text-lg font-bold text-gray-800"></span>
+                    <input type="number" id="captcha-input" required class="block w-2/5 px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                </div>
+            </div>
+            <div id="error-message" class="text-red-500 text-sm text-center font-semibold hidden">
+                Login, senha ou CAPTCHA incorretos. Tente novamente.
+            </div>
+            <div id="lockout-message" class="text-red-500 text-sm text-center font-semibold hidden">
+                Acesso bloqueado por 1 minuto. Tente novamente em <span id="lockout-countdown"></span> segundos.
+            </div>
+            <div>
+                <button type="submit" id="login-btn" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Entrar
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div id="main-content" class="hidden container mx-auto px-4 py-8">
+        <header class="text-center mb-8 animate-fade-in">
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h1 class="text-2xl font-bold text-gray-800">Quadro de Horários</h1>
+                    <button id="logout-btn" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors">Sair</button>
+                </div>
+                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTK8GG3kPkomlwI-nJ-_uBhAdGjYi9WBBKMzIQ5MX7h8muORN2sAVZvLpo&s=10" alt="Fachada da Escola Municipal Rui Barbosa" class="w-full h-48 object-cover rounded-lg mb-4" />
+                <h2 class="text-2xl text-indigo-600 font-semibold mb-4">Escola Municipal Rui Barbosa</h2>
+                <p class="text-gray-600">Ano Letivo 2025 - Período da Tarde</p>
+            </div>
+        </header>
+
+        <div id="notice-board" class="bg-yellow-100 rounded-xl shadow-lg p-4 mb-6 hidden">
+            <h3 class="text-lg font-semibold text-yellow-800 mb-2">Avisos Importantes:</h3>
+            <p id="notice-text" class="text-sm text-yellow-700"></p>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6 animate-fade-in" style="animation-delay: 0.1s;">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4 text-center">Selecione a Turma</h3>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-4 justify-items-center">
+                <div class="w-full text-center">
+                    <span class="text-sm font-bold text-gray-500 block mb-1">6º Ano</span>
+                    <div class="flex gap-2 justify-center">
+                        <button class="turma-seletor px-4 py-2 border rounded-lg shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500" data-turma="6a">6A</button>
+                        <button class="turma-seletor px-4 py-2 border rounded-lg shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500" data-turma="6b">6B</button>
+                        <button class="turma-seletor px-4 py-2 border rounded-lg shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500" data-turma="6c">6C</button>
+                    </div>
+                </div>
+                
+                <div class="w-full text-center">
+                    <span class="text-sm font-bold text-gray-500 block mb-1">7º Ano</span>
+                    <div class="flex gap-2 justify-center">
+                        <button class="turma-seletor px-4 py-2 border rounded-lg shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500" data-turma="7a">7A</button>
+                        <button class="turma-seletor px-4 py-2 border rounded-lg shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500" data-turma="7b">7B</button>
+                        <button class="turma-seletor px-4 py-2 border rounded-lg shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500" data-turma="7c">7C</button>
+                    </div>
+                </div>
+
+                <div class="w-full text-center">
+                    <span class="text-sm font-bold text-gray-500 block mb-1">8º Ano</span>
+                    <div class="flex gap-2 justify-center">
+                        <button class="turma-seletor px-4 py-2 border rounded-lg shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500" data-turma="8a">8A</button>
+                        <button class="turma-seletor px-4 py-2 border rounded-lg shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500" data-turma="8b">8B</button>
+                        <button class="turma-seletor px-4 py-2 border rounded-lg shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500" data-turma="8c">8C</button>
+                    </div>
+                </div>
+
+                <div class="w-full text-center">
+                    <span class="text-sm font-bold text-gray-500 block mb-1">9º Ano</span>
+                    <div class="flex gap-2 justify-center">
+                        <button class="turma-seletor px-4 py-2 border rounded-lg shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500" data-turma="9a">9A</button>
+                        <button class="turma-seletor px-4 py-2 border rounded-lg shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500" data-turma="9b">9B</button>
+                        <button class="turma-seletor px-4 py-2 border rounded-lg shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500" data-turma="9c">9C</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-indigo-100 rounded-xl p-4 mb-6 text-center animate-fade-in" style="animation-delay: 0.2s;">
+            <h2 class="text-2xl font-bold text-indigo-800" id="turma-atual"></h2>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden animate-fade-in" style="animation-delay: 0.3s;">
+            <div class="overflow-x-auto">
+                <table class="w-full" id="tabela-horarios">
+                    <thead class="bg-indigo-600 text-white">
+                        <tr>
+                            <th class="px-6 py-4 text-left font-semibold">Horário</th>
+                            <th class="px-6 py-4 text-center font-semibold" data-dia="1">Segunda-feira</th>
+                            <th class="px-6 py-4 text-center font-semibold" data-dia="2">Terça-feira</th>
+                            <th class="px-6 py-4 text-center font-semibold" data-dia="3">Quarta-feira</th>
+                            <th class="px-6 py-4 text-center font-semibold" data-dia="4">Quinta-feira</th>
+                            <th class="px-6 py-4 text-center font-semibold" data-dia="5">Sexta-feira</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="mt-8 bg-white rounded-xl shadow-lg p-6 animate-fade-in" style="animation-delay: 0.4s;">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Legenda de Disciplinas</h3>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                <div class="flex items-center">
+                    <div class="w-4 h-4 materia-portugues rounded mr-2"></div>
+                    <span class="text-sm">Português</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-4 h-4 materia-matematica rounded mr-2"></div>
+                    <span class="text-sm">Matemática</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-4 h-4 materia-ciencias rounded mr-2"></div>
+                    <span class="text-sm">Ciências</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-4 h-4 materia-geografia rounded mr-2"></div>
+                    <span class="text-sm">Geografia</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-4 h-4 materia-historia rounded mr-2"></div>
+                    <span class="text-sm">História</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-4 h-4 materia-ingles rounded mr-2"></div>
+                    <span class="text-sm">Inglês</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-4 h-4 materia-ed-fisica rounded mr-2"></div>
+                    <span class="text-sm">Ed. Física</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-4 h-4 materia-arte rounded mr-2"></div>
+                    <span class="text-sm">Arte</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-4 h-4 materia-htpc rounded mr-2"></div>
+                    <span class="text-sm">HTPC</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-6 bg-blue-50 rounded-xl p-6 animate-fade-in" style="animation-delay: 0.5s;">
+            <h3 class="text-lg font-semibold text-blue-800 mb-3">Informações da Turma</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
+                <div>
+                    <strong>Período:</strong> Tarde (13:00 às 17:50)
+                </div>
+                <div>
+                    <strong>Total de aulas:</strong> <span id="total-aulas"></span> aulas semanais
+                </div>
+                <div>
+                    <strong>Professores:</strong> Variados por disciplina
+                </div>
+                <div>
+                    <strong>Sala:</strong> <span id="sala-turma"></span>
+                </div>
+            </div>
+        </div>
+
+        <footer class="mt-8 text-center text-gray-600 text-sm">
+            <p>© 2025 Escola Municipal Rui Barbosa - Todos os direitos reservados.</p>
+            <p>Direitos de imagem © Bryan de Sá Baduris.</p>
+        </footer>
+    </div>
+
+    <div id="admin-panel" class="hidden container mx-auto px-4 py-8">
+        <header class="text-center mb-8">
+            <div class="flex justify-between items-center mb-4">
+                <h1 class="text-2xl font-bold text-gray-800">Painel de Administração</h1>
+                <button id="admin-logout-btn" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors">Sair</button>
+            </div>
+            <p class="text-gray-600">Gerenciar Dados do Sistema</p>
+        </header>
+
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Gerenciar Avisos</h3>
+            <div class="space-y-4">
+                <div>
+                    <label for="turma-select" class="block text-sm font-medium text-gray-700">Selecione a Turma:</label>
+                    <select id="turma-select" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <option value="geral">Aviso Geral</option>
+                        <option value="6a">6A</option>
+                        <option value="6b">6B</option>
+                        <option value="6c">6C</option>
+                        <option value="7a">7A</option>
+                        <option value="7b">7B</option>
+                        <option value="7c">7C</option>
+                        <option value="8a">8A</option>
+                        <option value="8b">8B</option>
+                        <option value="8c">8C</option>
+                        <option value="9a">9A</option>
+                        <option value="9b">9B</option>
+                        <option value="9c">9C</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="notice-textarea" class="block text-sm font-medium text-gray-700">Digite o aviso:</label>
+                    <textarea id="notice-textarea" rows="3" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
+                </div>
+                <button id="save-notice-btn" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Salvar Aviso
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Gerenciar Salas de Aula</h3>
+            <div class="space-y-4">
+                <div>
+                    <label for="admin-sala-turma-select" class="block text-sm font-medium text-gray-700">Selecione a Turma:</label>
+                    <select id="admin-sala-turma-select" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <option value="">-- Selecione uma turma --</option>
+                        <option value="6a">6A</option>
+                        <option value="6b">6B</option>
+                        <option value="6c">6C</option>
+                        <option value="7a">7A</option>
+                        <option value="7b">7B</option>
+                        <option value="7c">7C</option>
+                        <option value="8a">8A</option>
+                        <option value="8b">8B</option>
+                        <option value="8c">8C</option>
+                        <option value="9a">9A</option>
+                        <option value="9b">9B</option>
+                        <option value="9c">9C</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="admin-sala-input" class="block text-sm font-medium text-gray-700">Nome da Sala:</label>
+                    <input type="text" id="admin-sala-input" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm sm:text-sm" />
+                </div>
+                <button id="save-sala-btn" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Salvar Sala
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Editor de Horários Interativo</h3>
+            <div class="space-y-4">
+                <div>
+                    <label for="admin-edit-turma-select" class="block text-sm font-medium text-gray-700">Selecione a Turma:</label>
+                    <select id="admin-edit-turma-select" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <option value="">-- Selecione uma turma --</option>
+                        <option value="6a">6A</option>
+                        <option value="6b">6B</option>
+                        <option value="6c">6C</option>
+                        <option value="7a">7A</option>
+                        <option value="7b">7B</option>
+                        <option value="7c">7C</option>
+                        <option value="8a">8A</option>
+                        <option value="8b">8B</option>
+                        <option value="8c">8C</option>
+                        <option value="9a">9A</option>
+                        <option value="9b">9B</option>
+                        <option value="9c">9C</option>
+                    </select>
+                </div>
+                <div id="admin-interactive-schedule-editor" class="hidden overflow-x-auto">
+                    <table class="w-full text-sm mt-4">
+                        <thead class="bg-gray-200">
+                            <tr>
+                                <th class="px-2 py-2 text-left">Horário</th>
+                                <th class="px-2 py-2 text-center">Segunda</th>
+                                <th class="px-2 py-2 text-center">Terça</th>
+                                <th class="px-2 py-2 text-center">Quarta</th>
+                                <th class="px-2 py-2 text-center">Quinta</th>
+                                <th class="px-2 py-2 text-center">Sexta</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-interactive-schedule-body">
+                        </tbody>
+                    </table>
+                    <div class="flex gap-4 mt-4">
+                        <button id="admin-save-interactive-btn" class="w-full flex-1 justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Salvar Horário
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-red-50 rounded-xl shadow-lg p-6 mb-6">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Ações do Sistema</h3>
+            <button id="reset-data-btn" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                Resetar Dados para o Padrão
+            </button>
+        </div>
+
+        <div class="bg-red-100 rounded-xl shadow-lg p-6 mb-6">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Ocorrências de Alunos</h3>
+            <div id="incidents-container-admin" class="space-y-4">
+                <p class="text-gray-500 text-sm">Nenhuma ocorrência registrada.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="teacher-panel" class="hidden container mx-auto px-4 py-8">
+        <header class="text-center mb-8">
+            <div class="flex justify-between items-center mb-4">
+                <h1 class="text-2xl font-bold text-gray-800">Painel do Professor</h1>
+                <button id="teacher-logout-btn" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors">Sair</button>
+            </div>
+            <p class="text-gray-600">Gerenciar meu quadro de horários e diário de classe</p>
+        </header>
+
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4" id="teacher-name"></h3>
+            <div id="teacher-schedule-editor" class="overflow-x-auto">
+                <table class="w-full text-sm mt-4">
+                    <thead class="bg-gray-200">
+                        <tr>
+                            <th class="px-2 py-2 text-left">Horário</th>
+                            <th class="px-2 py-2 text-center">Segunda</th>
+                            <th class="px-2 py-2 text-center">Terça</th>
+                            <th class="px-2 py-2 text-center">Quarta</th>
+                            <th class="px-2 py-2 text-center">Quinta</th>
+                            <th class="px-2 py-2 text-center">Sexta</th>
+                        </tr>
+                    </thead>
+                    <tbody id="teacher-schedule-body">
+                    </tbody>
+                </table>
+                <div class="flex gap-4 mt-4">
+                    <button id="teacher-save-btn" class="w-full flex-1 justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Salvar Horário
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Diário de Classe</h3>
+            <div class="space-y-4">
+                <div>
+                    <label for="journal-turma-select" class="block text-sm font-medium text-gray-700">Selecione a Turma:</label>
+                    <select id="journal-turma-select" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></select>
+                </div>
+                <div id="class-journal-container" class="hidden">
+                    <h4 class="text-lg font-semibold text-gray-800 my-4">Chamada do Dia <span id="current-date"></span></h4>
+                    <table class="w-full text-sm mt-2">
+                        <thead class="bg-gray-200">
+                            <tr>
+                                <th class="px-2 py-2 text-left">Aluno</th>
+                                <th class="px-2 py-2 text-center">Presença</th>
+                            </tr>
+                        </thead>
+                        <tbody id="class-journal-body"></tbody>
+                    </table>
+                    <div class="flex gap-4 mt-4">
+                        <button id="save-journal-btn" class="w-full flex-1 justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            Salvar Chamada
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-red-50 rounded-xl shadow-lg p-6 mb-6">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Registro de Ocorrência</h3>
+            <div class="space-y-4">
+                <div>
+                    <label for="incident-aluno-select" class="block text-sm font-medium text-gray-700">Selecione o Aluno:</label>
+                    <select id="incident-aluno-select" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></select>
+                </div>
+                <div>
+                    <label for="incident-description-textarea" class="block text-sm font-medium text-gray-700">Descrição da Ocorrência:</label>
+                    <textarea id="incident-description-textarea" rows="3" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
+                </div>
+                <button id="report-incident-btn" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                    Enviar Ocorrência
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="director-panel" class="hidden container mx-auto px-4 py-8">
+        <header class="text-center mb-8">
+            <div class="flex justify-between items-center mb-4">
+                <h1 class="text-2xl font-bold text-gray-800">Painel do Diretor</h1>
+                <button id="director-logout-btn" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors">Sair</button>
+            </div>
+            <p class="text-gray-600">Gerenciar dados essenciais da escola</p>
+        </header>
+    
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Gerenciar Avisos</h3>
+            <div class="space-y-4">
+                <div>
+                    <label for="director-turma-select" class="block text-sm font-medium text-gray-700">Selecione a Turma:</label>
+                    <select id="director-turma-select" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <option value="geral">Aviso Geral</option>
+                        <option value="6a">6A</option>
+                        <option value="6b">6B</option>
+                        <option value="6c">6C</option>
+                        <option value="7a">7A</option>
+                        <option value="7b">7B</option>
+                        <option value="7c">7C</option>
+                        <option value="8a">8A</option>
+                        <option value="8b">8B</option>
+                        <option value="8c">8C</option>
+                        <option value="9a">9A</option>
+                        <option value="9b">9B</option>
+                        <option value="9c">9C</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="director-notice-textarea" class="block text-sm font-medium text-gray-700">Digite o aviso:</label>
+                    <textarea id="director-notice-textarea" rows="3" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
+                </div>
+                <button id="director-save-notice-btn" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Salvar Aviso
+                </button>
+            </div>
+        </div>
+    
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Gerenciar Salas de Aula</h3>
+            <div class="space-y-4">
+                <div>
+                    <label for="director-sala-turma-select" class="block text-sm font-medium text-gray-700">Selecione a Turma:</label>
+                    <select id="director-sala-turma-select" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <option value="">-- Selecione uma turma --</option>
+                        <option value="6a">6A</option>
+                        <option value="6b">6B</option>
+                        <option value="6c">6C</option>
+                        <option value="7a">7A</option>
+                        <option value="7b">7B</option>
+                        <option value="7c">7C</option>
+                        <option value="8a">8A</option>
+                        <option value="8b">8B</option>
+                        <option value="8c">8C</option>
+                        <option value="9a">9A</option>
+                        <option value="9b">9B</option>
+                        <option value="9c">9C</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="director-sala-input" class="block text-sm font-medium text-gray-700">Nome da Sala:</label>
+                    <input type="text" id="director-sala-input" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm sm:text-sm" />
+                </div>
+                <button id="director-save-sala-btn" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Salvar Sala
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Gerenciar Professores e Aulas</h3>
+            <div class="space-y-4">
+                <div>
+                    <label for="director-teacher-select" class="block text-sm font-medium text-gray-700">Selecione o Professor:</label>
+                    <select id="director-teacher-select" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <option value="">-- Selecione um professor --</option>
+                        </select>
+                </div>
+                <div id="director-teacher-schedule-editor" class="hidden overflow-x-auto">
+                    <table class="w-full text-sm mt-4">
+                        <thead class="bg-gray-200">
+                            <tr>
+                                <th class="px-2 py-2 text-left">Horário</th>
+                                <th class="px-2 py-2 text-center">Segunda</th>
+                                <th class="px-2 py-2 text-center">Terça</th>
+                                <th class="px-2 py-2 text-center">Quarta</th>
+                                <th class="px-2 py-2 text-center">Quinta</th>
+                                <th class="px-2 py-2 text-center">Sexta</th>
+                            </tr>
+                        </thead>
+                        <tbody id="director-teacher-schedule-body">
+                        </tbody>
+                    </table>
+                    <div class="flex gap-4 mt-4">
+                        <button id="director-save-teacher-btn" class="w-full flex-1 justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Salvar Horário do Professor
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Gerenciar Alunos</h3>
+            <div class="space-y-4">
+                <div>
+                    <label for="director-aluno-select" class="block text-sm font-medium text-gray-700">Selecione o Aluno:</label>
+                    <select id="director-aluno-select" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <option value="">-- Adicionar novo --</option>
+                        </select>
+                </div>
+                <div>
+                    <label for="director-aluno-login-input" class="block text-sm font-medium text-gray-700">Login do Aluno:</label>
+                    <input type="text" id="director-aluno-login-input" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm sm:text-sm" />
+                </div>
+                <div>
+                    <label for="director-aluno-password-input" class="block text-sm font-medium text-gray-700">Senha do Aluno:</label>
+                    <input type="text" id="director-aluno-password-input" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm sm:text-sm" />
+                </div>
+                <button id="director-save-aluno-btn" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    Salvar Aluno
+                </button>
+                <button id="director-delete-aluno-btn" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 hidden">
+                    Remover Aluno
+                </button>
+            </div>
+        </div>
+        
+        <div class="bg-red-100 rounded-xl shadow-lg p-6 mb-6">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Ocorrências de Alunos</h3>
+            <div id="incidents-container-director" class="space-y-4">
+                <p class="text-gray-500 text-sm">Nenhuma ocorrência registrada.</p>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Relatórios e Estatísticas</h3>
+            <p>Em desenvolvimento...</p>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Comunicação</h3>
+            <div class="space-y-4">
+                <div>
+                    <label for="director-message-dest-select" class="block text-sm font-medium text-gray-700">Destinatário:</label>
+                    <select id="director-message-dest-select" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <option value="todos">Todos</option>
+                        <option value="professores">Professores</option>
+                        <option value="alunos">Alunos</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="director-message-textarea" class="block text-sm font-medium text-gray-700">Mensagem:</label>
+                    <textarea id="director-message-textarea" rows="3" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
+                </div>
+                <button id="director-send-message-btn" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    Enviar Mensagem
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="developer-panel" class="hidden container mx-auto px-4 py-8">
+        <header class="text-center mb-8">
+            <div class="flex justify-between items-center mb-4">
+                <h1 class="text-2xl font-bold text-gray-800">Sistema de Developer</h1>
+                <button id="developer-logout-btn" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors">Sair</button>
+            </div>
+            <p class="text-gray-600">Edite os dados do sistema.</p>
+        </header>
+
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Gerenciar Usuários</h3>
+            <div class="space-y-4">
+                <div>
+                    <label for="user-type-select" class="block text-sm font-medium text-gray-700">Tipo de Usuário:</label>
+                    <select id="user-type-select" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <option value="aluno">Aluno</option>
+                        <option value="professor">Professor</option>
+                        <option value="diretor">Diretor</option>
+                        <option value="admin">Admin</option>
+                        <option value="developer">Developer</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="new-login-input" class="block text-sm font-medium text-gray-700">Novo Login:</label>
+                    <input type="text" id="new-login-input" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm sm:text-sm" />
+                </div>
+                <div>
+                    <label for="new-password-input" class="block text-sm font-medium text-gray-700">Nova Senha:</label>
+                    <input type="password" id="new-password-input" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm sm:text-sm" />
+                </div>
+                <button id="save-user-btn" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    Salvar Usuário
+                </button>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Editor de Horários Interativo</h3>
+            <div class="space-y-4">
+                <div>
+                    <label for="dev-edit-turma-select" class="block text-sm font-medium text-gray-700">Selecione a Turma:</label>
+                    <select id="dev-edit-turma-select" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <option value="">-- Selecione uma turma --</option>
+                        <option value="6a">6A</option>
+                        <option value="6b">6B</option>
+                        <option value="6c">6C</option>
+                        <option value="7a">7A</option>
+                        <option value="7b">7B</option>
+                        <option value="7c">7C</option>
+                        <option value="8a">8A</option>
+                        <option value="8b">8B</option>
+                        <option value="8c">8C</option>
+                        <option value="9a">9A</option>
+                        <option value="9b">9B</option>
+                        <option value="9c">9C</option>
+                    </select>
+                </div>
+                <div id="dev-interactive-schedule-editor" class="hidden overflow-x-auto">
+                    <table class="w-full text-sm mt-4">
+                        <thead class="bg-gray-200">
+                            <tr>
+                                <th class="px-2 py-2 text-left">Horário</th>
+                                <th class="px-2 py-2 text-center">Segunda</th>
+                                <th class="px-2 py-2 text-center">Terça</th>
+                                <th class="px-2 py-2 text-center">Quarta</th>
+                                <th class="px-2 py-2 text-center">Quinta</th>
+                                <th class="px-2 py-2 text-center">Sexta</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dev-interactive-schedule-body">
+                            </tbody>
+                    </table>
+                    <div class="flex gap-4 mt-4">
+                        <button id="dev-save-interactive-btn" class="w-full flex-1 justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Salvar Horário
+                        </button>
+                        <button id="apply-to-all-btn" class="w-full flex-1 justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Aplicar este horário a todas as turmas
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Gerenciar Dados</h3>
+            <div class="space-y-4">
+                <div>
+                    <label for="developer-turma-select" class="block text-sm font-medium text-gray-700">Selecione a Turma para apagar dados:</label>
+                    <select id="developer-turma-select" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <option value="">-- Selecione uma turma --</option>
+                        <option value="6a">6A</option>
+                        <option value="6b">6B</option>
+                        <option value="6c">6C</option>
+                        <option value="7a">7A</option>
+                        <option value="7b">7B</option>
+                        <option value="7c">7C</option>
+                        <option value="8a">8A</option>
+                        <option value="8b">8B</option>
+                        <option value="8c">8C</option>
+                        <option value="9a">9A</option>
+                        <option value="9b">9B</option>
+                        <option value="9c">9C</option>
+                    </select>
+                </div>
+                <button id="clear-turma-data-btn" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                    Apagar Dados da Turma
+                </button>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Gerenciar Lista de Alunos e Chamada</h3>
+            <div class="space-y-4">
+                <div>
+                    <label for="dev-turma-alunos-select" class="block text-sm font-medium text-gray-700">Selecione a Turma:</label>
+                    <select id="dev-turma-alunos-select" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></select>
+                </div>
+                <div id="dev-alunos-container" class="hidden">
+                    <ul id="dev-alunos-list" class="bg-gray-50 border border-gray-200 rounded-md p-4 space-y-2 max-h-48 overflow-y-auto"></ul>
+                    <div class="mt-4">
+                        <input type="text" id="dev-add-aluno-input" placeholder="Nome do novo aluno" class="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm sm:text-sm" />
+                        <button id="dev-add-aluno-btn" class="mt-2 w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            Adicionar Aluno
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Gerenciar Avisos</h3>
+            <div class="space-y-4">
+                <div>
+                    <label for="dev-notice-turma-select" class="block text-sm font-medium text-gray-700">Selecione a Turma:</label>
+                    <select id="dev-notice-turma-select" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <option value="geral">Aviso Geral</option>
+                        <option value="6a">6A</option>
+                        <option value="6b">6B</option>
+                        <option value="6c">6C</option>
+                        <option value="7a">7A</option>
+                        <option value="7b">7B</option>
+                        <option value="7c">7C</option>
+                        <option value="8a">8A</option>
+                        <option value="8b">8B</option>
+                        <option value="8c">8C</option>
+                        <option value="9a">9A</option>
+                        <option value="9b">9B</option>
+                        <option value="9c">9C</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="dev-notice-textarea" class="block text-sm font-medium text-gray-700">Digite o aviso:</label>
+                    <textarea id="dev-notice-textarea" rows="3" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
+                </div>
+                <button id="save-dev-notice-btn" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    Salvar Aviso
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Limpar Histórico de Auditoria</h3>
+            <p>Limpa o registro de todas as ações administrativas e de desenvolvedor.</p>
+            <button id="clear-audit-log-btn" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                Limpar Log
+            </button>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Simular Sessão de Usuário</h3>
+            <div class="space-y-4">
+                <div>
+                    <label for="simulate-user-type-select" class="block text-sm font-medium text-gray-700">Tipo de Usuário:</label>
+                    <select id="simulate-user-type-select" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <option value="aluno">Aluno</option>
+                        <option value="professor">Professor</option>
+                        <option value="diretor">Diretor</option>
+                        <option value="admin">Admin</option>
+                        <option value="developer">Developer</option>
+                    </select>
+                </div>
+                <button id="simulate-user-btn" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
+                    Simular Login
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-gray-100 rounded-xl shadow-lg p-6 mb-6">
+            <a href="#" id="toggle-json-editor" class="text-indigo-600 hover:underline">
+                Avançado: Editar JSON Direto
+            </a>
+            <div id="json-editor-container" class="hidden space-y-6 mt-4">
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Horários (JSON)</h3>
+                    <textarea id="horarios-textarea" rows="15" class="mt-1 block w-full p-4 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm font-mono"></textarea>
+                </div>
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Avisos (JSON)</h3>
+                    <textarea id="avisos-textarea" rows="5" class="mt-1 block w-full p-4 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm font-mono"></textarea>
+                </div>
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Credenciais (JSON)</h3>
+                    <textarea id="credentials-textarea" rows="5" class="mt-1 block w-full p-4 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm font-mono"></textarea>
+                </div>
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Horários de Professor (JSON)</h3>
+                    <textarea id="teacher-horarios-textarea" rows="5" class="mt-1 block w-full p-4 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm font-mono"></textarea>
+                </div>
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Diário de Classe (JSON)</h3>
+                    <textarea id="class-journal-textarea" rows="5" class="mt-1 block w-full p-4 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm font-mono"></textarea>
+                </div>
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Ocorrências (JSON)</h3>
+                    <textarea id="incidents-textarea" rows="5" class="mt-1 block w-full p-4 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm font-mono"></textarea>
+                </div>
+                <button id="save-json-btn" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                    Salvar Tudo (JSON)
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Dados padrão (se não houver nada salvo no localStorage)
+        const defaultHorarios = {
+            '6a': {
+                sala: 'Sala 6A',
+                totalAulas: 25,
+                aulas: [
+                    ['13:00 - 13:50', 'Português', 'Matemática', 'Ciências', 'História', 'Geografia'],
+                    ['13:50 - 14:40', 'Matemática', 'Português', 'Arte', 'Ciências', 'Inglês'],
+                    ['14:40 - 15:30', 'Ciências', 'História', 'Matemática', 'Português', 'Ed. Física'],
+                    ['15:30 - 15:50', 'Intervalo', 'Intervalo', 'Intervalo', 'Intervalo', 'Intervalo'],
+                    ['15:50 - 16:40', 'Geografia', 'Inglês', 'História', 'Matemática', 'Ciências'],
+                    ['16:40 - 17:30', 'Inglês', 'Arte', 'HTPC', 'Geografia', 'História'],
+                    ['17:30 - 17:50', '', '', 'HTPC', '', '']
+                ],
+                alunos: ['Ana Silva', 'Bruno Costa', 'Carla Mendes', 'Diego Oliveira', 'Sofia Gomes']
+            },
+            '6b': {
+                sala: 'Sala 6B',
+                totalAulas: 25,
+                aulas: [
+                    ['13:00 - 13:50', 'História', 'Português', 'Matemática', 'Geografia', 'Ciências'],
+                    ['13:50 - 14:40', 'Inglês', 'Matemática', 'Português', 'Arte', 'História'],
+                    ['14:40 - 15:30', 'Ed. Física', 'Ciências', 'História', 'Matemática', 'Português'],
+                    ['15:30 - 15:50', 'Intervalo', 'Intervalo', 'Intervalo', 'Intervalo', 'Intervalo'],
+                    ['15:50 - 16:40', 'Ciências', 'Geografia', 'Inglês', 'História', 'Matemática'],
+                    ['16:40 - 17:30', 'Arte', 'Inglês', 'HTPC', 'Ciências', 'Português'],
+                    ['17:30 - 17:50', '', '', 'HTPC', '', '']
+                ],
+                alunos: ['Thiago Souza', 'Lara Almeida', 'Lucas Pereira', 'Mariana Santos', 'Pedro Henrique']
+            },
+            '6c': {
+                sala: 'Sala 6C',
+                totalAulas: 25,
+                aulas: [
+                    ['13:00 - 13:50', 'Matemática', 'Ciências', 'História', 'Português', 'Inglês'],
+                    ['13:50 - 14:40', 'Português', 'Arte', 'Ciências', 'Ed. Física', 'Geografia'],
+                    ['14:40 - 15:30', 'História', 'Matemática', 'Português', 'Ciências', 'História'],
+                    ['15:30 - 15:50', 'Intervalo', 'Intervalo', 'Intervalo', 'Intervalo', 'Intervalo'],
+                    ['15:50 - 16:40', 'Ciências', 'Geografia', 'Inglês', 'Matemática', 'Português'],
+                    ['16:40 - 17:30', 'Geografia', 'História', 'HTPC', 'Português', 'Matemática'],
+                    ['17:30 - 17:50', '', '', 'HTPC', '', '']
+                ],
+                alunos: ['Gustavo Lima', 'Helena Rocha', 'Isabela Fernandes', 'João Carlos', 'Larissa Costa']
+            },
+            '7a': {
+                sala: 'Sala 7A',
+                totalAulas: 25,
+                aulas: [
+                    ['13:00 - 13:50', 'Ciências', 'Geografia', 'Matemática', 'Português', 'Inglês'],
+                    ['13:50 - 14:40', 'Arte', 'História', 'Ciências', 'Geografia', 'Matemática'],
+                    ['14:40 - 15:30', 'Matemática', 'Português', 'Ed. Física', 'História', 'Ciências'],
+                    ['15:30 - 15:50', 'Intervalo', 'Intervalo', 'Intervalo', 'Intervalo', 'Intervalo'],
+                    ['15:50 - 16:40', 'História', 'Ciências', 'Geografia', 'Matemática', 'Português'],
+                    ['16:40 - 17:30', 'Português', 'Inglês', 'HTPC', 'Arte', 'História'],
+                    ['17:30 - 17:50', '', '', 'HTPC', '', '']
+                ],
+                alunos: ['Maria Clara', 'Felipe Santos', 'Gabriel Silva', 'Laura Almeida', 'Matheus Oliveira']
+            },
+            '7b': {
+                sala: 'Sala 7B',
+                totalAulas: 25,
+                aulas: [
+                    ['13:00 - 13:50', 'Português', 'Matemática', 'História', 'Ciências', 'Geografia'],
+                    ['13:50 - 14:40', 'Matemática', 'Português', 'Arte', 'Geografia', 'Ciências'],
+                    ['14:40 - 15:30', 'Ciências', 'História', 'Matemática', 'Português', 'Ed. Física'],
+                    ['15:30 - 15:50', 'Intervalo', 'Intervalo', 'Intervalo', 'Intervalo', 'Intervalo'],
+                    ['15:50 - 16:40', 'Geografia', 'Inglês', 'História', 'Matemática', 'Ciências'],
+                    ['16:40 - 17:30', 'Inglês', 'Arte', 'HTPC', 'Geografia', 'História'],
+                    ['17:30 - 17:50', '', '', 'HTPC', '', '']
+                ],
+                alunos: ['Juliana Martins', 'Luan Costa', 'Nicole Souza', 'Otávio Ferreira', 'Priscila Rocha']
+            },
+            '7c': {
+                sala: 'Sala 7C',
+                totalAulas: 25,
+                aulas: [
+                    ['13:00 - 13:50', 'Matemática', 'História', 'Português', 'Ciências', 'Inglês'],
+                    ['13:50 - 14:40', 'Português', 'Ciências', 'Matemática', 'Arte', 'Geografia'],
+                    ['14:40 - 15:30', 'História', 'Matemática', 'Ed. Física', 'Português', 'História'],
+                    ['15:30 - 15:50', 'Intervalo', 'Intervalo', 'Intervalo', 'Intervalo', 'Intervalo'],
+                    ['15:50 - 16:40', 'Ciências', 'Geografia', 'Inglês', 'Matemática', 'Português'],
+                    ['16:40 - 17:30', 'Geografia', 'Inglês', 'HTPC', 'Português', 'Matemática'],
+                    ['17:30 - 17:50', '', '', 'HTPC', '', '']
+                ],
+                alunos: ['Rafael Costa', 'Sophia Mendes', 'Thiago Lima', 'Vitória Santos', 'Wendell Silva']
+            },
+            '8a': {
+                sala: 'Sala 8A',
+                totalAulas: 25,
+                aulas: [
+                    ['13:00 - 13:50', 'Ciências', 'Português', 'Geografia', 'Matemática', 'História'],
+                    ['13:50 - 14:40', 'Arte', 'Matemática', 'Ciências', 'Português', 'Inglês'],
+                    ['14:40 - 15:30', 'Português', 'História', 'Matemática', 'Ed. Física', 'Ciências'],
+                    ['15:30 - 15:50', 'Intervalo', 'Intervalo', 'Intervalo', 'Intervalo', 'Intervalo'],
+                    ['15:50 - 16:40', 'História', 'Geografia', 'Inglês', 'Português', 'Matemática'],
+                    ['16:40 - 17:30', 'Matemática', 'Inglês', 'HTPC', 'Ciências', 'Geografia'],
+                    ['17:30 - 17:50', '', '', 'HTPC', '', '']
+                ],
+                alunos: ['Alexandre Faria', 'Bianca Morais', 'Carlos Eduardo', 'Fernanda Lima', 'Guilherme Souza']
+            },
+            '8b': {
+                sala: 'Sala 8B',
+                totalAulas: 25,
+                aulas: [
+                    ['13:00 - 13:50', 'Matemática', 'Português', 'História', 'Ciências', 'Inglês'],
+                    ['13:50 - 14:40', 'Português', 'Arte', 'Ciências', 'Geografia', 'Matemática'],
+                    ['14:40 - 15:30', 'História', 'Matemática', 'Ed. Física', 'Português', 'História'],
+                    ['15:30 - 15:50', 'Intervalo', 'Intervalo', 'Intervalo', 'Intervalo', 'Intervalo'],
+                    ['15:50 - 16:40', 'Ciências', 'Geografia', 'Inglês', 'Matemática', 'Português'],
+                    ['16:40 - 17:30', 'Geografia', 'Inglês', 'HTPC', 'Português', 'Matemática'],
+                    ['17:30 - 17:50', '', '', 'HTPC', '', '']
+                ],
+                alunos: ['Heloísa Santos', 'Igor Miranda', 'Júlia Ferreira', 'Kauã Ribeiro', 'Lívia Costa']
+            },
+            '8c': {
+                sala: 'Sala 8C',
+                totalAulas: 25,
+                aulas: [
+                    ['13:00 - 13:50', 'História', 'Matemática', 'Português', 'Ciências', 'Geografia'],
+                    ['13:50 - 14:40', 'Inglês', 'Português', 'Ciências', 'Arte', 'História'],
+                    ['14:40 - 15:30', 'Matemática', 'História', 'Ed. Física', 'Ciências', 'Português'],
+                    ['15:30 - 15:50', 'Intervalo', 'Intervalo', 'Intervalo', 'Intervalo', 'Intervalo'],
+                    ['15:50 - 16:40', 'Ciências', 'Geografia', 'Inglês', 'Matemática', 'Português'],
+                    ['16:40 - 17:30', 'Geografia', 'Inglês', 'HTPC', 'Português', 'Matemática'],
+                    ['17:30 - 17:50', '', '', 'HTPC', '', '']
+                ],
+                alunos: ['Mariana Lins', 'Nicolas Guedes', 'Olivia Silva', 'Paulo Victor', 'Quésia Alves']
+            },
+            '9a': {
+                sala: 'Sala 9A',
+                totalAulas: 25,
+                aulas: [
+                    ['13:00 - 13:50', 'Matemática', 'Português', 'Ciências', 'Geografia', 'História'],
+                    ['13:50 - 14:40', 'Ciências', 'Matemática', 'Português', 'Arte', 'Inglês'],
+                    ['14:40 - 15:30', 'Português', 'História', 'Ed. Física', 'Ciências', 'Matemática'],
+                    ['15:30 - 15:50', 'Intervalo', 'Intervalo', 'Intervalo', 'Intervalo', 'Intervalo'],
+                    ['15:50 - 16:40', 'História', 'Geografia', 'Inglês', 'Português', 'Ciências'],
+                    ['16:40 - 17:30', 'Inglês', 'Arte', 'HTPC', 'Matemática', 'História'],
+                    ['17:30 - 17:50', '', '', 'HTPC', '', '']
+                ],
+                alunos: ['Renan Rocha', 'Sofia Oliveira', 'Telma Alves', 'Vinícius Martins', 'Yago Gomes']
+            },
+            '9b': {
+                sala: 'Sala 9B',
+                totalAulas: 25,
+                aulas: [
+                    ['13:00 - 13:50', 'Português', 'Ciências', 'História', 'Matemática', 'Inglês'],
+                    ['13:50 - 14:40', 'Matemática', 'História', 'Ciências', 'Português', 'Arte'],
+                    ['14:40 - 15:30', 'Ciências', 'Português', 'Matemática', 'História', 'Ed. Física'],
+                    ['15:30 - 15:50', 'Intervalo', 'Intervalo', 'Intervalo', 'Intervalo', 'Intervalo'],
+                    ['15:50 - 16:40', 'Geografia', 'Inglês', 'História', 'Matemática', 'Ciências'],
+                    ['16:40 - 17:30', 'Inglês', 'Arte', 'HTPC', 'Geografia', 'História'],
+                    ['17:30 - 17:50', '', '', 'HTPC', '', '']
+                ],
+                alunos: ['Aline Ribeiro', 'Bernardo Costa', 'Carolina Silva', 'Danilo Pires', 'Evelyn Santos']
+            },
+            '9c': {
+                sala: 'Sala 9C',
+                totalAulas: 25,
+                aulas: [
+                    ['13:00 - 13:50', 'História', 'Matemática', 'Português', 'Geografia', 'Ciências'],
+                    ['13:50 - 14:40', 'Inglês', 'Português', 'Ciências', 'Arte', 'História'],
+                    ['14:40 - 15:30', 'Matemática', 'História', 'Ed. Física', 'Ciências', 'Português'],
+                    ['15:30 - 15:50', 'Intervalo', 'Intervalo', 'Intervalo', 'Intervalo', 'Intervalo'],
+                    ['15:50 - 16:40', 'Ciências', 'Geografia', 'Inglês', 'Matemática', 'Português'],
+                    ['16:40 - 17:30', 'Geografia', 'Inglês', 'HTPC', 'Português', 'Matemática'],
+                    ['17:30 - 17:50', '', '', 'HTPC', '', '']
+                ],
+                alunos: ['Fernanda Rocha', 'Gustavo Alves', 'Helena Torres', 'Igor Santos', 'Janaína Cruz']
+            }
+        };
+
+        const defaultTeacherHorarios = {
+            'prof_joao': {
+                nome: 'Prof. João',
+                disciplina: 'Matemática',
+                aulas: [
+                    ['13:00 - 13:50', '6a', '7b', '8c', '9a', ''],
+                    ['13:50 - 14:40', '6b', '6c', '7a', '8b', ''],
+                    ['14:40 - 15:30', '7c', '8a', '9b', '9c', ''],
+                    ['15:30 - 15:50', 'Intervalo', 'Intervalo', 'Intervalo', 'Intervalo', 'Intervalo'],
+                    ['15:50 - 16:40', '6c', '7c', '8c', '9b', ''],
+                    ['16:40 - 17:30', '8a', '9a', '9c', '6a', ''],
+                    ['17:30 - 17:50', '', '', '', '', '']
+                ]
+            },
+            'prof_maria': {
+                nome: 'Prof. Maria',
+                disciplina: 'Português',
+                aulas: [
+                    ['13:00 - 13:50', '6a', '6b', '7c', '8a', ''],
+                    ['13:50 - 14:40', '6b', '7a', '8b', '8c', ''],
+                    ['14:40 - 15:30', '6c', '7b', '9a', '9c', ''],
+                    ['15:30 - 15:50', 'Intervalo', 'Intervalo', 'Intervalo', 'Intervalo', 'Intervalo'],
+                    ['15:50 - 16:40', '7a', '8a', '8b', '9c', ''],
+                    ['16:40 - 17:30', '7b', '7c', '9a', '9b', ''],
+                    ['17:30 - 17:50', '', '', '', '', '']
+                ]
+            },
+            'prof_ana': {
+                nome: 'Prof. Ana',
+                disciplina: 'História',
+                aulas: [
+                    ['13:00 - 13:50', '6b', '7c', '8a', '8b', ''],
+                    ['13:50 - 14:40', '6a', '7a', '7b', '8c', ''],
+                    ['14:40 - 15:30', '6c', '9a', '9b', '9c', ''],
+                    ['15:30 - 15:50', 'Intervalo', 'Intervalo', 'Intervalo', 'Intervalo', 'Intervalo'],
+                    ['15:50 - 16:40', '6a', '6b', '7a', '7b', ''],
+                    ['16:40 - 17:30', '7c', '8a', '8b', '8c', ''],
+                    ['17:30 - 17:50', '', '', '', '', '']
+                ]
+            }
+        };
+
+        const defaultAvisos = {
+            'geral': 'Bem-vindos ao ano letivo de 2025! Fiquem atentos às atualizações.',
+        };
+        
+        const defaultCredentials = {
+            'aluno': { login: '1150736847sp', password: 'Bryam99kk$' },
+            'professor': { login: 'professor', password: 'professor123' },
+            'diretor': { login: 'diretor', password: 'diretor123' },
+            'admin': { login: 'admin', password: 'admin123' },
+            'developer': { login: 'Bryan123@', password: 'Bryan123@' },
+            'prof_joao': { login: 'joao', password: 'joao123', tipo: 'professor' },
+            'prof_maria': { login: 'maria', password: 'maria123', tipo: 'professor' },
+            'prof_ana': { login: 'ana', password: 'ana123', tipo: 'professor' }
+        };
+
+        const defaultClassJournal = {};
+        const defaultIncidents = [];
+        const defaultAuditLog = [];
+        const defaultRequests = [];
+        const defaultMessages = [];
+
+        // Carrega os dados do localStorage ou usa os padrões
+        let horarios = JSON.parse(localStorage.getItem('horarios')) || JSON.parse(JSON.stringify(defaultHorarios));
+        let teacherHorarios = JSON.parse(localStorage.getItem('teacherHorarios')) || JSON.parse(JSON.stringify(defaultTeacherHorarios));
+        let avisos = JSON.parse(localStorage.getItem('avisos')) || JSON.parse(JSON.stringify(defaultAvisos));
+        let credentials = JSON.parse(localStorage.getItem('credentials')) || JSON.parse(JSON.stringify(defaultCredentials));
+        let classJournal = JSON.parse(localStorage.getItem('classJournal')) || JSON.parse(JSON.stringify(defaultClassJournal));
+        let incidents = JSON.parse(localStorage.getItem('incidents')) || JSON.parse(JSON.stringify(defaultIncidents));
+        let auditLog = JSON.parse(localStorage.getItem('auditLog')) || JSON.parse(JSON.stringify(defaultAuditLog));
+        let requests = JSON.parse(localStorage.getItem('requests')) || JSON.parse(JSON.stringify(defaultRequests));
+        let messages = JSON.parse(localStorage.getItem('messages')) || JSON.parse(JSON.stringify(defaultMessages));
+        
+        // Define a lista de matérias para os dropdowns
+        const materiasDisponiveis = ['', 'Português', 'Matemática', 'Ciências', 'Geografia', 'História', 'Inglês', 'Ed. Física', 'Arte', 'HTPC', 'Intervalo'];
+        const turmasDisponiveis = ['', '6a', '6b', '6c', '7a', '7b', '7c', '8a', '8b', '8c', '9a', '9b', '9c'];
+
+        let currentTurma = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const loginForm = document.getElementById('login-form');
+            const loginInput = document.getElementById('login-input');
+            const passwordInput = document.getElementById('password-input');
+            const captchaQuestion = document.getElementById('captcha-question');
+            const captchaInput = document.getElementById('captcha-input');
+            const errorMessage = document.getElementById('error-message');
+            const lockoutMessage = document.getElementById('lockout-message');
+            const lockoutCountdown = document.getElementById('lockout-countdown');
+            const loginBtn = document.getElementById('login-btn');
+            const loginContainer = document.getElementById('login-container');
+            const mainContent = document.getElementById('main-content');
+            const adminPanel = document.getElementById('admin-panel');
+            const developerPanel = document.getElementById('developer-panel');
+            const teacherPanel = document.getElementById('teacher-panel');
+            const directorPanel = document.getElementById('director-panel');
+            const turmaSelectors = document.querySelectorAll('.turma-seletor');
+            const tabelaHorariosBody = document.querySelector('#tabela-horarios tbody');
+            const turmaAtualText = document.getElementById('turma-atual');
+            const totalAulasText = document.getElementById('total-aulas');
+            const salaTurmaText = document.getElementById('sala-turma');
+            const noticeBoard = document.getElementById('notice-board');
+            const noticeText = document.getElementById('notice-text');
+            const noticeTextarea = document.getElementById('notice-textarea');
+            const saveNoticeBtn = document.getElementById('save-notice-btn');
+            const togglePasswordBtn = document.getElementById('toggle-password');
+            const toggleIcon = document.getElementById('toggle-icon');
+            const logoutBtn = document.getElementById('logout-btn');
+            const adminLogoutBtn = document.getElementById('admin-logout-btn');
+            const teacherLogoutBtn = document.getElementById('teacher-logout-btn');
+            const directorLogoutBtn = document.getElementById('director-logout-btn');
+            const developerLogoutBtn = document.getElementById('developer-logout-btn');
+            const turmaSelect = document.getElementById('turma-select');
+            
+            // Novos elementos do painel de administração
+            const adminSalaTurmaSelect = document.getElementById('admin-sala-turma-select');
+            const adminSalaInput = document.getElementById('admin-sala-input');
+            const saveSalaBtn = document.getElementById('save-sala-btn');
+            const resetDataBtn = document.getElementById('reset-data-btn');
+            const adminEditTurmaSelect = document.getElementById('admin-edit-turma-select');
+            const adminInteractiveScheduleEditor = document.getElementById('admin-interactive-schedule-editor');
+            const adminInteractiveScheduleBody = document.getElementById('admin-interactive-schedule-body');
+            const adminSaveInteractiveBtn = document.getElementById('admin-save-interactive-btn');
+            const incidentsContainerAdmin = document.getElementById('incidents-container-admin');
+
+            // Elementos do painel de professor
+            const teacherName = document.getElementById('teacher-name');
+            const teacherScheduleBody = document.getElementById('teacher-schedule-body');
+            const teacherSaveBtn = document.getElementById('teacher-save-btn');
+            const journalTurmaSelect = document.getElementById('journal-turma-select');
+            const classJournalContainer = document.getElementById('class-journal-container');
+            const currentJournalDate = document.getElementById('current-date');
+            const classJournalBody = document.getElementById('class-journal-body');
+            const saveJournalBtn = document.getElementById('save-journal-btn');
+            const incidentAlunoSelect = document.getElementById('incident-aluno-select');
+            const incidentDescriptionTextarea = document.getElementById('incident-description-textarea');
+            const reportIncidentBtn = document.getElementById('report-incident-btn');
+
+            // Elementos do painel de diretor
+            const directorTurmaSelect = document.getElementById('director-turma-select');
+            const directorNoticeTextarea = document.getElementById('director-notice-textarea');
+            const directorSaveNoticeBtn = document.getElementById('director-save-notice-btn');
+            const directorSalaTurmaSelect = document.getElementById('director-sala-turma-select');
+            const directorSalaInput = document.getElementById('director-sala-input');
+            const directorSaveSalaBtn = document.getElementById('director-save-sala-btn');
+            const directorTeacherSelect = document.getElementById('director-teacher-select');
+            const directorTeacherScheduleEditor = document.getElementById('director-teacher-schedule-editor');
+            const directorTeacherScheduleBody = document.getElementById('director-teacher-schedule-body');
+            const directorSaveTeacherBtn = document.getElementById('director-save-teacher-btn');
+            const directorAlunoSelect = document.getElementById('director-aluno-select');
+            const directorAlunoLoginInput = document.getElementById('director-aluno-login-input');
+            const directorAlunoPasswordInput = document.getElementById('director-aluno-password-input');
+            const directorSaveAlunoBtn = document.getElementById('director-save-aluno-btn');
+            const directorDeleteAlunoBtn = document.getElementById('director-delete-aluno-btn');
+            const directorMessageDestSelect = document.getElementById('director-message-dest-select');
+            const directorMessageTextarea = document.getElementById('director-message-textarea');
+            const directorSendMessageBtn = document.getElementById('director-send-message-btn');
+            const incidentsContainerDirector = document.getElementById('incidents-container-director');
+
+            // Elementos do painel de developer
+            const devEditTurmaSelect = document.getElementById('dev-edit-turma-select');
+            const devInteractiveScheduleEditor = document.getElementById('dev-interactive-schedule-editor');
+            const devInteractiveScheduleBody = document.getElementById('dev-interactive-schedule-body');
+            const devSaveInteractiveBtn = document.getElementById('dev-save-interactive-btn');
+            const applyToAllBtn = document.getElementById('apply-to-all-btn');
+            const devNoticeTurmaSelect = document.getElementById('dev-notice-turma-select');
+            const devNoticeTextarea = document.getElementById('dev-notice-textarea');
+            const saveDevNoticeBtn = document.getElementById('save-dev-notice-btn');
+            const toggleJsonEditor = document.getElementById('toggle-json-editor');
+            const jsonEditorContainer = document.getElementById('json-editor-container');
+            const horariosTextarea = document.getElementById('horarios-textarea');
+            const avisosTextarea = document.getElementById('avisos-textarea');
+            const credentialsTextarea = document.getElementById('credentials-textarea');
+            const teacherHorariosTextarea = document.getElementById('teacher-horarios-textarea');
+            const classJournalTextarea = document.getElementById('class-journal-textarea');
+            const incidentsTextarea = document.getElementById('incidents-textarea');
+            const saveJsonBtn = document.getElementById('save-json-btn');
+            const userTypeSelect = document.getElementById('user-type-select');
+            const newLoginInput = document.getElementById('new-login-input');
+            const newPasswordInput = document.getElementById('new-password-input');
+            const saveUserBtn = document.getElementById('save-user-btn');
+            const developerTurmaSelect = document.getElementById('developer-turma-select');
+            const clearTurmaDataBtn = document.getElementById('clear-turma-data-btn');
+            const clearAuditLogBtn = document.getElementById('clear-audit-log-btn');
+            const simulateUserTypeSelect = document.getElementById('simulate-user-type-select');
+            const simulateUserBtn = document.getElementById('simulate-user-btn');
+            const devTurmaAlunosSelect = document.getElementById('dev-turma-alunos-select');
+            const devAlunosContainer = document.getElementById('dev-alunos-container');
+            const devAlunosList = document.getElementById('dev-alunos-list');
+            const devAddAlunoInput = document.getElementById('dev-add-aluno-input');
+            const devAddAlunoBtn = document.getElementById('dev-add-aluno-btn');
+
+
+            // Variáveis para o sistema de lockout
+            let loginAttempts = 0;
+            const maxAttempts = 3;
+            const lockoutTime = 60000;
+            let lockoutTimer = null;
+            let captchaAnswer = 0;
+
+            let currentUserType = null;
+            let currentUserId = null;
+
+
+            const generateCaptcha = () => {
+                const num1 = Math.floor(Math.random() * 10) + 1;
+                const num2 = Math.floor(Math.random() * 10) + 1;
+                captchaQuestion.textContent = `${num1} + ${num2} =`;
+                captchaAnswer = num1 + num2;
+                captchaInput.value = '';
+            };
+
+            const saveData = () => {
+                localStorage.setItem('horarios', JSON.stringify(horarios));
+                localStorage.setItem('teacherHorarios', JSON.stringify(teacherHorarios));
+                localStorage.setItem('avisos', JSON.stringify(avisos));
+                localStorage.setItem('credentials', JSON.stringify(credentials));
+                localStorage.setItem('classJournal', JSON.stringify(classJournal));
+                localStorage.setItem('incidents', JSON.stringify(incidents));
+                localStorage.setItem('auditLog', JSON.stringify(auditLog));
+                localStorage.setItem('requests', JSON.stringify(requests));
+                localStorage.setItem('messages', JSON.stringify(messages));
+            };
+
+            const logAction = (action, user, details) => {
+                const timestamp = new Date().toISOString();
+                auditLog.push({ timestamp, action, user, details });
+                saveData();
+            };
+
+            const showLogin = () => {
+                loginContainer.classList.remove('hidden');
+                mainContent.classList.add('hidden');
+                adminPanel.classList.add('hidden');
+                developerPanel.classList.add('hidden');
+                teacherPanel.classList.add('hidden');
+                directorPanel.classList.add('hidden');
+                loginInput.value = '';
+                passwordInput.value = '';
+                captchaInput.value = '';
+                errorMessage.classList.add('hidden');
+                lockoutMessage.classList.add('hidden');
+                tabelaHorariosBody.innerHTML = '';
+                turmaAtualText.textContent = '';
+                noticeBoard.classList.add('hidden');
+                loginAttempts = 0;
+                currentUserType = null;
+                currentUserId = null;
+                if (lockoutTimer) {
+                    clearInterval(lockoutTimer);
+                    lockoutTimer = null;
+                }
+                generateCaptcha();
+            };
+
+            const displayNotice = (turma) => {
+                const avisoGeral = avisos['geral'] || '';
+                const avisoTurma = avisos[turma] || '';
+                const avisoFinal = avisoTurma || avisoGeral;
+
+                if (avisoFinal) {
+                    noticeText.textContent = avisoFinal;
+                    noticeBoard.classList.remove('hidden');
+                } else {
+                    noticeBoard.classList.add('hidden');
+                }
+            };
+
+            const applyShineEffect = () => {
+                const dataAtual = new Date();
+                const diaDaSemana = dataAtual.getDay(); 
+                const horaAtual = dataAtual.getHours();
+                const minutosAtual = dataAtual.getMinutes();
+
+                const horariosInicio = [
+                    { hora: 13, min: 0, id: 0 },
+                    { hora: 13, min: 50, id: 1 },
+                    { hora: 14, min: 40, id: 2 },
+                    { hora: 15, min: 30, id: 3 }, 
+                    { hora: 15, min: 50, id: 4 },
+                    { hora: 16, min: 40, id: 5 },
+                    { hora: 17, min: 30, id: 6 },
+                ];
+                
+                let aulaAtualId = -1;
+                for (let i = 0; i < horariosInicio.length; i++) {
+                    const h = horariosInicio[i];
+                    const proximoH = horariosInicio[i + 1] || { hora: 18, min: 0 };
+                    
+                    const inicioEmMinutos = h.hora * 60 + h.min;
+                    const proximoEmMinutos = proximoH.hora * 60 + proximoH.min;
+                    const atualEmMinutos = horaAtual * 60 + minutosAtual;
+
+                    if (atualEmMinutos >= inicioEmMinutos && atualEmMinutos < proximoEmMinutos) {
+                        aulaAtualId = h.id;
+                        break;
+                    }
+                }
+
+                document.querySelectorAll('.coluna-brilhando, .celula-brilhando').forEach(el => {
+                    el.classList.remove('coluna-brilhando', 'celula-brilhando');
+                });
+                
+                if (diaDaSemana >= 1 && diaDaSemana <= 5) {
+                    const colunaDoDia = document.querySelector(`[data-dia="${diaDaSemana}"]`);
+                    if (colunaDoDia) {
+                        colunaDoDia.classList.add('coluna-brilhando');
+                    }
+                    
+                    if (aulaAtualId !== -1) {
+                        const celulaAula = document.querySelector(`#tabela-horarios tbody tr:nth-child(${aulaAtualId + 1}) td:nth-child(${diaDaSemana + 1})`);
+                        if (celulaAula) {
+                            celulaAula.classList.add('celula-brilhando');
+                        }
+                    }
+                }
+            };
+
+            const generateScheduleEditor = (turma, container, body) => {
+                body.innerHTML = '';
+                if (turma && horarios[turma]) {
+                    container.classList.remove('hidden');
+                    horarios[turma].aulas.forEach((aula, rowIndex) => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `<td class="border px-2 py-2 text-left">${aula[0]}</td>`;
+                        for (let i = 1; i < aula.length; i++) {
+                            const select = document.createElement('select');
+                            select.className = `w-full text-center p-1 rounded border-gray-300 bg-white`;
+                            select.dataset.rowIndex = rowIndex;
+                            select.dataset.colIndex = i;
+
+                            materiasDisponiveis.forEach(materia => {
+                                const option = document.createElement('option');
+                                option.value = materia;
+                                option.textContent = materia;
+                                if (materia === aula[i]) {
+                                    option.selected = true;
+                                }
+                                select.appendChild(option);
+                            });
+
+                            const td = document.createElement('td');
+                            td.className = 'border px-2 py-2';
+                            td.appendChild(select);
+                            tr.appendChild(td);
+                        }
+                        body.appendChild(tr);
+                    });
+                } else {
+                    container.classList.add('hidden');
+                }
+            };
+
+            const generateTeacherScheduleEditor = (teacherId, body) => {
+                body.innerHTML = '';
+                const teacherSchedule = teacherHorarios[teacherId];
+                if (teacherSchedule) {
+                    teacherName.textContent = `Horário do ${teacherSchedule.nome}`;
+                    teacherSchedule.aulas.forEach((aula, rowIndex) => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `<td class="border px-2 py-2 text-left">${aula[0]}</td>`;
+                        for (let i = 1; i < aula.length; i++) {
+                            const select = document.createElement('select');
+                            select.className = `w-full text-center p-1 rounded border-gray-300 bg-white`;
+                            select.dataset.rowIndex = rowIndex;
+                            select.dataset.colIndex = i;
+
+                            turmasDisponiveis.forEach(turma => {
+                                const option = document.createElement('option');
+                                option.value = turma;
+                                option.textContent = turma.toUpperCase();
+                                if (turma === aula[i]) {
+                                    option.selected = true;
+                                }
+                                select.appendChild(option);
+                            });
+
+                            const td = document.createElement('td');
+                            td.className = 'border px-2 py-2';
+                            td.appendChild(select);
+                            tr.appendChild(td);
+                        }
+                        body.appendChild(tr);
+                    });
+                }
+            };
+
+            const saveTeacherSchedule = (teacherId, bodyElement) => {
+                if (!teacherId || !teacherHorarios[teacherId]) {
+                    alert('Nenhum horário de professor para salvar.');
+                    return;
+                }
+            
+                const selects = bodyElement.querySelectorAll('select');
+                const newAulas = JSON.parse(JSON.stringify(teacherHorarios[teacherId].aulas));
+                let hasChanges = false;
+            
+                selects.forEach(select => {
+                    const rowIndex = parseInt(select.dataset.rowIndex, 10);
+                    const colIndex = parseInt(select.dataset.colIndex, 10);
+                    const newValue = select.value.trim().toLowerCase();
+            
+                    if (newAulas[rowIndex][colIndex] !== newValue) {
+                        newAulas[rowIndex][colIndex] = newValue;
+                        hasChanges = true;
+                    }
+                });
+            
+                if (hasChanges) {
+                    teacherHorarios[teacherId].aulas = newAulas;
+                    saveData();
+                    logAction('Salvar Horário Professor', currentUserType, `Horário de ${teacherHorarios[teacherId].nome} salvo.`);
+                    alert(`Horário do professor ${teacherHorarios[teacherId].nome} salvo com sucesso!`);
+                } else {
+                    alert('Nenhuma alteração detectada para salvar.');
+                }
+            };
+
+            const saveSchedule = (turma, bodyElement) => {
+                if (!turma || !horarios[turma]) {
+                    alert('Selecione uma turma para salvar.');
+                    return;
+                }
+            
+                const selects = bodyElement.querySelectorAll('select');
+                const newAulas = JSON.parse(JSON.stringify(horarios[turma].aulas));
+                let hasChanges = false;
+            
+                selects.forEach(select => {
+                    const rowIndex = parseInt(select.dataset.rowIndex, 10);
+                    const colIndex = parseInt(select.dataset.colIndex, 10);
+                    const newValue = select.value.trim();
+            
+                    if (newAulas[rowIndex][colIndex] !== newValue) {
+                        newAulas[rowIndex][colIndex] = newValue;
+                        hasChanges = true;
+                    }
+                });
+            
+                if (hasChanges) {
+                    horarios[turma].aulas = newAulas;
+                    saveData();
+                    logAction('Salvar Horário Turma', currentUserType, `Horário da turma ${turma.toUpperCase()} salvo.`);
+                    alert(`Horário da turma ${turma.toUpperCase()} salvo com sucesso!`);
+                } else {
+                    alert('Nenhuma alteração detectada para salvar.');
+                }
+            };
+
+            const populateTeacherSelects = () => {
+                const selects = [directorTeacherSelect, journalTurmaSelect];
+                selects.forEach(select => {
+                    select.innerHTML = '<option value="">-- Selecione um professor --</option>';
+                    for (const id in teacherHorarios) {
+                        const option = document.createElement('option');
+                        option.value = id;
+                        option.textContent = teacherHorarios[id].nome;
+                        select.appendChild(option);
+                    }
+                });
+            };
+
+            const populateAlunoSelects = () => {
+                directorAlunoSelect.innerHTML = '<option value="">-- Adicionar novo --</option>';
+                const allAlunos = {};
+                for (const turma in horarios) {
+                    horarios[turma].alunos.forEach(aluno => {
+                        allAlunos[aluno] = turma;
+                    });
+                }
+
+                for (const login in credentials) {
+                    if (credentials[login].tipo === 'aluno') {
+                        const option = document.createElement('option');
+                        option.value = login;
+                        option.textContent = credentials[login].nome || login;
+                        directorAlunoSelect.appendChild(option);
+                    }
+                }
+            };
+            
+            const populateIncidentAlunoSelect = (turma) => {
+                incidentAlunoSelect.innerHTML = '<option value="">-- Selecione um aluno --</option>';
+                if (horarios[turma] && horarios[turma].alunos) {
+                    horarios[turma].alunos.forEach(aluno => {
+                        const option = document.createElement('option');
+                        option.value = aluno;
+                        option.textContent = aluno;
+                        incidentAlunoSelect.appendChild(option);
+                    });
+                }
+            };
+
+            const populateIncidents = () => {
+                const adminContainer = document.getElementById('incidents-container-admin');
+                const directorContainer = document.getElementById('incidents-container-director');
+
+                const displayIncidents = (container) => {
+                    container.innerHTML = '';
+                    if (incidents.length === 0) {
+                        container.innerHTML = '<p class="text-gray-500 text-sm">Nenhuma ocorrência registrada.</p>';
+                        return;
+                    }
+                    incidents.forEach(incident => {
+                        const div = document.createElement('div');
+                        div.className = 'p-4 rounded-lg bg-red-200 border-l-4 border-red-500 incident';
+                        const date = new Date(incident.timestamp).toLocaleString('pt-BR');
+                        div.innerHTML = `
+                            <p class="font-bold text-red-900">Ocorrência de Aluno</p>
+                            <p class="text-red-800"><strong>Aluno:</strong> ${incident.aluno} (${incident.turma.toUpperCase()})</p>
+                            <p class="text-red-800"><strong>Professor:</strong> ${incident.professor}</p>
+                            <p class="text-red-800 mt-2"><strong>Descrição:</strong> ${incident.descricao}</p>
+                            <p class="text-xs text-gray-600 mt-2">Registrado em: ${date}</p>
+                        `;
+                        container.appendChild(div);
+                    });
+                };
+                
+                displayIncidents(adminContainer);
+                displayIncidents(directorContainer);
+            };
+
+
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                if (loginBtn.disabled) {
+                    return;
+                }
+
+                const login = loginInput.value;
+                const password = passwordInput.value;
+                const captcha = parseInt(captchaInput.value, 10);
+
+                if (captcha !== captchaAnswer) {
+                     errorMessage.textContent = 'Resposta do CAPTCHA incorreta. Tente novamente.';
+                     errorMessage.classList.remove('hidden');
+                     generateCaptcha();
+                     logAction('Falha de Login (CAPTCHA)', 'Anônimo', `Login: ${login}`);
+                     return;
+                }
+
+                let accessGranted = false;
+                let userType = null;
+                let userId = null;
+                let userLoginKey = null;
+                
+                for (const key in credentials) {
+                    if (credentials[key].login === login && credentials[key].password === password) {
+                        userType = credentials[key].tipo || key;
+                        userId = key;
+                        accessGranted = true;
+                        break;
+                    }
+                }
+
+                if (accessGranted) {
+                    errorMessage.classList.add('hidden');
+                    loginAttempts = 0;
+                    loginContainer.classList.add('hidden');
+                    currentUserType = userType;
+                    currentUserId = userId;
+                    
+                    logAction('Login bem-sucedido', userType, `Login: ${login}`);
+
+                    if (userType === 'aluno') {
+                        mainContent.classList.remove('hidden');
+                        applyShineEffect();
+                    } else if (userType === 'admin') {
+                        adminPanel.classList.remove('hidden');
+                        populateIncidents();
+                    } else if (userType === 'professor') {
+                        teacherPanel.classList.remove('hidden');
+                        generateTeacherScheduleEditor(userId, teacherScheduleBody);
+                        populateJournalTurmaSelect();
+                    } else if (userType === 'diretor') {
+                        directorPanel.classList.remove('hidden');
+                        populateTeacherSelects();
+                        populateAlunoSelects();
+                        populateIncidents();
+                    } else if (userType === 'developer') {
+                        developerPanel.classList.remove('hidden');
+                        populateDevTurmaAlunosSelect();
+                    }
+
+                } else {
+                    errorMessage.textContent = 'Login, senha ou CAPTCHA incorretos. Tente novamente.';
+                    errorMessage.classList.remove('hidden');
+                    generateCaptcha();
+                    loginAttempts++;
+                    logAction('Falha de Login', 'Anônimo', `Login: ${login}`);
+
+                    if (loginAttempts >= maxAttempts) {
+                        loginBtn.disabled = true;
+                        loginInput.disabled = true;
+                        passwordInput.disabled = true;
+                        captchaInput.disabled = true;
+                        loginBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                        
+                        errorMessage.classList.add('hidden');
+                        lockoutMessage.classList.remove('hidden');
+                        
+                        let remainingTime = lockoutTime / 1000;
+                        lockoutCountdown.textContent = remainingTime;
+
+                        lockoutTimer = setInterval(() => {
+                            remainingTime--;
+                            lockoutCountdown.textContent = remainingTime;
+                            if (remainingTime <= 0) {
+                                clearInterval(lockoutTimer);
+                                lockoutTimer = null;
+                                loginBtn.disabled = false;
+                                loginInput.disabled = false;
+                                passwordInput.disabled = false;
+                                captchaInput.disabled = false;
+                                loginBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                                lockoutMessage.classList.add('hidden');
+                                errorMessage.textContent = 'Login, senha ou CAPTCHA incorretos. Tente novamente.';
+                                errorMessage.classList.remove('hidden');
+                                loginAttempts = 0;
+                                generateCaptcha();
+                            }
+                        }, 1000);
+                    }
+                }
+            });
+
+            togglePasswordBtn.addEventListener('click', () => {
+                const type = passwordInput.type === 'password' ? 'text' : 'password';
+                passwordInput.type = type;
+                toggleIcon.textContent = type === 'password' ? '👁️' : '🔒';
+            });
+
+            turmaSelectors.forEach(button => {
+                button.addEventListener('click', () => {
+                    turmaSelectors.forEach(btn => btn.classList.remove('turma-ativa'));
+                    button.classList.add('turma-ativa');
+
+                    const turma = button.dataset.turma;
+                    currentTurma = turma;
+                    const turmaInfo = horarios[turma];
+                    
+                    if (turmaInfo) {
+                        turmaAtualText.textContent = `Turma ${turma.toUpperCase()}`;
+                        totalAulasText.textContent = turmaInfo.totalAulas;
+                        salaTurmaText.textContent = turmaInfo.sala;
+                        
+                        tabelaHorariosBody.innerHTML = '';
+                        turmaInfo.aulas.forEach(row => {
+                            const tr = document.createElement('tr');
+                            tr.classList.add('border-b', 'border-gray-200');
+                            row.forEach((cellText, index) => {
+                                const td = document.createElement('td');
+                                td.classList.add('px-6', 'py-4', 'text-center', 'font-medium', 'text-gray-800', 'hover-scale');
+                                td.textContent = cellText;
+                                if (index > 0) { 
+                                    const materiaSlug = cellText.toLowerCase().replace(/ /g, '-').replace('á', 'a');
+                                    const materiaClass = `materia-${materiaSlug}`;
+                                    td.classList.add(materiaClass, 'text-white', 'rounded-lg', 'm-1');
+                                }
+                                tr.appendChild(td);
+                            });
+                            tabelaHorariosBody.appendChild(tr);
+                        });
+                        displayNotice(turma);
+                        applyShineEffect();
+                    }
+                });
+            });
+
+            turmaSelect.addEventListener('change', (e) => {
+                const turma = e.target.value;
+                noticeTextarea.value = avisos[turma] || '';
+            });
+
+            saveNoticeBtn.addEventListener('click', () => {
+                const turma = turmaSelect.value;
+                const aviso = noticeTextarea.value.trim();
+                avisos[turma] = aviso;
+                saveData(); 
+                logAction('Salvar Aviso', currentUserType, `Aviso para ${turma.toUpperCase()} salvo.`);
+                alert(`Aviso para ${turma.toUpperCase()} salvo com sucesso!`);
+            });
+
+            // Lógica do painel de administração
+            adminSalaTurmaSelect.addEventListener('change', (e) => {
+                const turma = e.target.value;
+                if (turma && horarios[turma]) {
+                    adminSalaInput.value = horarios[turma].sala;
+                } else {
+                    adminSalaInput.value = '';
+                }
+            });
+
+            saveSalaBtn.addEventListener('click', () => {
+                const turma = adminSalaTurmaSelect.value;
+                const novaSala = adminSalaInput.value.trim();
+                if (turma && horarios[turma] && novaSala) {
+                    horarios[turma].sala = novaSala;
+                    saveData();
+                    logAction('Salvar Sala', currentUserType, `Sala da turma ${turma.toUpperCase()} atualizada para "${novaSala}".`);
+                    alert(`Sala da turma ${turma.toUpperCase()} atualizada para "${novaSala}".`);
+                } else {
+                    alert('Selecione uma turma e digite um nome de sala válido.');
+                }
+            });
+
+            adminEditTurmaSelect.addEventListener('change', (e) => {
+                const turma = e.target.value;
+                generateScheduleEditor(turma, adminInteractiveScheduleEditor, adminInteractiveScheduleBody);
+            });
+
+            adminSaveInteractiveBtn.addEventListener('click', () => {
+                const turma = adminEditTurmaSelect.value;
+                saveSchedule(turma, adminInteractiveScheduleBody);
+            });
+
+            resetDataBtn.addEventListener('click', () => {
+                if (confirm('Tem certeza que deseja resetar todos os dados? Isso apagará todas as alterações de horários, avisos e credenciais.')) {
+                    localStorage.removeItem('horarios');
+                    localStorage.removeItem('teacherHorarios');
+                    localStorage.removeItem('avisos');
+                    localStorage.removeItem('credentials');
+                    localStorage.removeItem('classJournal');
+                    localStorage.removeItem('incidents');
+                    localStorage.removeItem('auditLog');
+                    localStorage.removeItem('requests');
+                    localStorage.removeItem('messages');
+                    horarios = JSON.parse(JSON.stringify(defaultHorarios));
+                    teacherHorarios = JSON.parse(JSON.stringify(defaultTeacherHorarios));
+                    avisos = JSON.parse(JSON.stringify(defaultAvisos));
+                    credentials = JSON.parse(JSON.stringify(defaultCredentials));
+                    classJournal = JSON.parse(JSON.stringify(defaultClassJournal));
+                    incidents = JSON.parse(JSON.stringify(defaultIncidents));
+                    auditLog = JSON.parse(JSON.stringify(defaultAuditLog));
+                    requests = JSON.parse(JSON.stringify(defaultRequests));
+                    messages = JSON.parse(JSON.stringify(defaultMessages));
+                    alert('Dados resetados com sucesso! O sistema será recarregado.');
+                    logAction('Reset de Dados', currentUserType, 'Todos os dados do sistema foram resetados para o padrão.');
+                    showLogin();
+                }
+            });
+
+            // Lógica do painel de professor
+            teacherSaveBtn.addEventListener('click', () => {
+                saveTeacherSchedule(currentUserId, teacherScheduleBody);
+            });
+            
+            const populateJournalTurmaSelect = () => {
+                journalTurmaSelect.innerHTML = '<option value="">-- Selecione uma turma --</option>';
+                const assignedTurmas = [];
+                teacherHorarios[currentUserId].aulas.forEach(aula => {
+                    aula.slice(1).forEach(turma => {
+                        if (turma && turma !== 'Intervalo' && !assignedTurmas.includes(turma)) {
+                            assignedTurmas.push(turma);
+                        }
+                    });
+                });
+                assignedTurmas.sort();
+                assignedTurmas.forEach(turma => {
+                    const option = document.createElement('option');
+                    option.value = turma;
+                    option.textContent = `Turma ${turma.toUpperCase()}`;
+                    journalTurmaSelect.appendChild(option);
+                });
+            };
+
+            journalTurmaSelect.addEventListener('change', (e) => {
+                const turma = e.target.value;
+                if (!turma) {
+                    classJournalContainer.classList.add('hidden');
+                    return;
+                }
+                
+                classJournalContainer.classList.remove('hidden');
+                const today = new Date().toISOString().slice(0, 10);
+                currentJournalDate.textContent = today;
+                
+                classJournalBody.innerHTML = '';
+                if (horarios[turma] && horarios[turma].alunos) {
+                    horarios[turma].alunos.forEach(aluno => {
+                        const tr = document.createElement('tr');
+                        tr.className = 'border-b border-gray-200';
+                        
+                        const tdNome = document.createElement('td');
+                        tdNome.className = 'px-4 py-2';
+                        tdNome.textContent = aluno;
+                        tr.appendChild(tdNome);
+
+                        const tdPresenca = document.createElement('td');
+                        tdPresenca.className = 'px-4 py-2 text-center';
+                        
+                        const presenca = (classJournal[today] && classJournal[today][turma] && classJournal[today][turma][aluno]) || 'presente';
+                        
+                        const select = document.createElement('select');
+                        select.className = `w-full p-1 rounded border-gray-300 ${presenca}`;
+                        select.dataset.aluno = aluno;
+                        select.dataset.turma = turma;
+
+                        ['presente', 'ausente', 'justificado'].forEach(status => {
+                            const option = document.createElement('option');
+                            option.value = status;
+                            option.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+                            if (status === presenca) {
+                                option.selected = true;
+                            }
+                            select.appendChild(option);
+                        });
+
+                        select.addEventListener('change', (e) => {
+                            select.className = `w-full p-1 rounded border-gray-300 ${e.target.value}`;
+                        });
+
+                        tdPresenca.appendChild(select);
+                        tr.appendChild(tdPresenca);
+                        classJournalBody.appendChild(tr);
+                    });
+                }
+                populateIncidentAlunoSelect(turma);
+            });
+            
+            saveJournalBtn.addEventListener('click', () => {
+                const turma = journalTurmaSelect.value;
+                if (!turma) {
+                    alert('Selecione uma turma primeiro.');
+                    return;
+                }
+                
+                const today = new Date().toISOString().slice(0, 10);
+                if (!classJournal[today]) {
+                    classJournal[today] = {};
+                }
+                if (!classJournal[today][turma]) {
+                    classJournal[today][turma] = {};
+                }
+                
+                const selects = classJournalBody.querySelectorAll('select');
+                selects.forEach(select => {
+                    const aluno = select.dataset.aluno;
+                    const status = select.value;
+                    classJournal[today][turma][aluno] = status;
+                });
+                
+                saveData();
+                logAction('Salvar Chamada', currentUserType, `Chamada da turma ${turma.toUpperCase()} para ${today} salva.`);
+                alert('Chamada salva com sucesso!');
+            });
+            
+            reportIncidentBtn.addEventListener('click', () => {
+                const aluno = incidentAlunoSelect.value;
+                const descricao = incidentDescriptionTextarea.value.trim();
+                const turma = journalTurmaSelect.value;
+
+                if (!aluno || !descricao || !turma) {
+                    alert('Selecione um aluno e descreva a ocorrência.');
+                    return;
+                }
+
+                incidents.push({
+                    aluno: aluno,
+                    turma: turma,
+                    professor: teacherHorarios[currentUserId].nome,
+                    descricao: descricao,
+                    timestamp: new Date().toISOString()
+                });
+                saveData();
+                logAction('Registrar Ocorrência', currentUserType, `Ocorrência para ${aluno} na turma ${turma.toUpperCase()} registrada.`);
+                alert('Ocorrência registrada com sucesso!');
+                incidentAlunoSelect.value = '';
+                incidentDescriptionTextarea.value = '';
+                populateIncidents();
+            });
+
+
+            // Lógica do painel de diretor
+            directorTurmaSelect.addEventListener('change', (e) => {
+                const turma = e.target.value;
+                directorNoticeTextarea.value = avisos[turma] || '';
+            });
+
+            directorSaveNoticeBtn.addEventListener('click', () => {
+                const turma = directorTurmaSelect.value;
+                const aviso = directorNoticeTextarea.value.trim();
+                avisos[turma] = aviso;
+                saveData(); 
+                logAction('Salvar Aviso', currentUserType, `Aviso para ${turma.toUpperCase()} salvo.`);
+                alert(`Aviso para ${turma.toUpperCase()} salvo com sucesso!`);
+            });
+
+            directorSalaTurmaSelect.addEventListener('change', (e) => {
+                const turma = e.target.value;
+                if (turma && horarios[turma]) {
+                    directorSalaInput.value = horarios[turma].sala;
+                } else {
+                    directorSalaInput.value = '';
+                }
+            });
+
+            directorSaveSalaBtn.addEventListener('click', () => {
+                const turma = directorSalaTurmaSelect.value;
+                const novaSala = directorSalaInput.value.trim();
+                if (turma && horarios[turma] && novaSala) {
+                    horarios[turma].sala = novaSala;
+                    saveData();
+                    logAction('Salvar Sala', currentUserType, `Sala da turma ${turma.toUpperCase()} atualizada para "${novaSala}".`);
+                    alert(`Sala da turma ${turma.toUpperCase()} atualizada para "${novaSala}".`);
+                } else {
+                    alert('Selecione uma turma e digite um nome de sala válido.');
+                }
+            });
+
+            directorTeacherSelect.addEventListener('change', (e) => {
+                const teacherId = e.target.value;
+                if (teacherId) {
+                    directorTeacherScheduleEditor.classList.remove('hidden');
+                    generateTeacherScheduleEditor(teacherId, directorTeacherScheduleBody);
+                } else {
+                    directorTeacherScheduleEditor.classList.add('hidden');
+                }
+            });
+
+            directorSaveTeacherBtn.addEventListener('click', () => {
+                const teacherId = directorTeacherSelect.value;
+                saveTeacherSchedule(teacherId, directorTeacherScheduleBody);
+            });
+
+            directorAlunoSelect.addEventListener('change', (e) => {
+                const loginKey = e.target.value;
+                if (loginKey) {
+                    directorAlunoLoginInput.value = credentials[loginKey].login;
+                    directorAlunoPasswordInput.value = credentials[loginKey].password;
+                    directorDeleteAlunoBtn.classList.remove('hidden');
+                } else {
+                    directorAlunoLoginInput.value = '';
+                    directorAlunoPasswordInput.value = '';
+                    directorDeleteAlunoBtn.classList.add('hidden');
+                }
+            });
+
+            directorSaveAlunoBtn.addEventListener('click', () => {
+                const login = directorAlunoLoginInput.value.trim();
+                const password = directorAlunoPasswordInput.value.trim();
+                const selectedLoginKey = directorAlunoSelect.value;
+                const isNew = !selectedLoginKey;
+
+                if (login && password) {
+                    if (isNew) {
+                        const newLoginKey = `aluno${Object.keys(credentials).filter(k => k.startsWith('aluno')).length + 1}`;
+                        credentials[newLoginKey] = { login: login, password: password, tipo: 'aluno' };
+                        logAction('Salvar Aluno', currentUserType, `Novo aluno com login "${login}" salvo.`);
+                    } else {
+                        credentials[selectedLoginKey].login = login;
+                        credentials[selectedLoginKey].password = password;
+                        logAction('Salvar Aluno', currentUserType, `Credenciais do aluno "${login}" atualizadas.`);
+                    }
+                    saveData();
+                    alert(`Credenciais do aluno "${login}" salvas com sucesso!`);
+                    populateAlunoSelects();
+                    directorAlunoSelect.value = '';
+                    directorAlunoSelect.dispatchEvent(new Event('change'));
+                } else {
+                    alert('Login e senha não podem ser vazios.');
+                }
+            });
+
+            directorDeleteAlunoBtn.addEventListener('click', () => {
+                const loginKey = directorAlunoSelect.value;
+                if (loginKey && confirm(`Tem certeza que deseja remover o aluno ${credentials[loginKey].login}?`)) {
+                    delete credentials[loginKey];
+                    saveData();
+                    logAction('Remover Aluno', currentUserType, `Aluno com login "${credentials[loginKey].login}" removido.`);
+                    alert('Aluno removido com sucesso.');
+                    populateAlunoSelects();
+                    directorAlunoSelect.value = '';
+                    directorAlunoSelect.dispatchEvent(new Event('change'));
+                }
+            });
+
+            directorSendMessageBtn.addEventListener('click', () => {
+                const destinatario = directorMessageDestSelect.value;
+                const mensagem = directorMessageTextarea.value.trim();
+                if (mensagem) {
+                    messages.push({
+                        remetente: 'Diretoria',
+                        destinatario: destinatario,
+                        mensagem: mensagem,
+                        timestamp: new Date().toISOString()
+                    });
+                    saveData();
+                    logAction('Enviar Mensagem', currentUserType, `Mensagem enviada para ${destinatario}.`);
+                    alert('Mensagem enviada com sucesso!');
+                    directorMessageTextarea.value = '';
+                } else {
+                    alert('A mensagem não pode ser vazia.');
+                }
+            });
+
+
+            // Lógica do painel de developer
+            const populateDevTurmaAlunosSelect = () => {
+                const turmas = Object.keys(horarios);
+                devTurmaAlunosSelect.innerHTML = '<option value="">-- Selecione uma turma --</option>';
+                turmas.forEach(turma => {
+                    const option = document.createElement('option');
+                    option.value = turma;
+                    option.textContent = turma.toUpperCase();
+                    devTurmaAlunosSelect.appendChild(option);
+                });
+            };
+
+            devTurmaAlunosSelect.addEventListener('change', (e) => {
+                const turma = e.target.value;
+                if (turma && horarios[turma] && horarios[turma].alunos) {
+                    devAlunosContainer.classList.remove('hidden');
+                    renderDevAlunosList(turma);
+                } else {
+                    devAlunosContainer.classList.add('hidden');
+                }
+            });
+
+            const renderDevAlunosList = (turma) => {
+                devAlunosList.innerHTML = '';
+                if (horarios[turma] && horarios[turma].alunos) {
+                    horarios[turma].alunos.forEach(aluno => {
+                        const li = document.createElement('li');
+                        li.className = 'flex justify-between items-center';
+                        li.innerHTML = `
+                            <span>${aluno}</span>
+                            <button class="remove-aluno-btn text-red-500 hover:text-red-700 font-bold" data-aluno="${aluno}">Remover</button>
+                        `;
+                        devAlunosList.appendChild(li);
+                    });
+                }
+
+                document.querySelectorAll('.remove-aluno-btn').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const alunoNome = e.target.dataset.aluno;
+                        const turma = devTurmaAlunosSelect.value;
+                        if (confirm(`Tem certeza que deseja remover o aluno "${alunoNome}" da turma ${turma.toUpperCase()}?`)) {
+                            horarios[turma].alunos = horarios[turma].alunos.filter(aluno => aluno !== alunoNome);
+                            saveData();
+                            logAction('Remover Aluno da Turma', currentUserType, `Aluno "${alunoNome}" removido da turma ${turma.toUpperCase()}.`);
+                            renderDevAlunosList(turma);
+                        }
+                    });
+                });
+            };
+
+            devAddAlunoBtn.addEventListener('click', () => {
+                const turma = devTurmaAlunosSelect.value;
+                const novoAluno = devAddAlunoInput.value.trim();
+                if (turma && novoAluno) {
+                    if (!horarios[turma].alunos.includes(novoAluno)) {
+                        horarios[turma].alunos.push(novoAluno);
+                        horarios[turma].alunos.sort();
+                        saveData();
+                        logAction('Adicionar Aluno à Turma', currentUserType, `Aluno "${novoAluno}" adicionado à turma ${turma.toUpperCase()}.`);
+                        renderDevAlunosList(turma);
+                        devAddAlunoInput.value = '';
+                    } else {
+                        alert('Este aluno já está na lista.');
+                    }
+                } else {
+                    alert('Selecione uma turma e digite o nome do aluno.');
+                }
+            });
+
+            devEditTurmaSelect.addEventListener('change', (e) => {
+                const turma = e.target.value;
+                generateScheduleEditor(turma, devInteractiveScheduleEditor, devInteractiveScheduleBody);
+            });
+
+            devSaveInteractiveBtn.addEventListener('click', () => {
+                const turma = devEditTurmaSelect.value;
+                saveSchedule(turma, devInteractiveScheduleBody);
+            });
+            
+            applyToAllBtn.addEventListener('click', () => {
+                const sourceTurma = devEditTurmaSelect.value;
+                if (!sourceTurma || !horarios[sourceTurma]) {
+                    alert('Selecione uma turma para copiar o horário.');
+                    return;
+                }
+
+                if (confirm(`Tem certeza que deseja aplicar o horário da turma ${sourceTurma.toUpperCase()} para TODAS as outras turmas? Essa ação não pode ser desfeita.`)) {
+                    
+                    const sourceHorario = horarios[sourceTurma].aulas;
+                    const turmas = Object.keys(horarios);
+
+                    turmas.forEach(turma => {
+                        if (turma !== sourceTurma) {
+                            horarios[turma].aulas = JSON.parse(JSON.stringify(sourceHorario));
+                        }
+                    });
+
+                    saveData();
+                    logAction('Aplicar Horário a Todos', currentUserType, `Horário da turma ${sourceTurma.toUpperCase()} aplicado a todas as turmas.`);
+                    alert('O horário foi aplicado a todas as turmas com sucesso!');
+                }
+            });
+
+            userTypeSelect.addEventListener('change', (e) => {
+                const type = e.target.value;
+                newLoginInput.value = credentials[type].login;
+                newPasswordInput.value = credentials[type].password;
+            });
+            userTypeSelect.dispatchEvent(new Event('change'));
+
+            saveUserBtn.addEventListener('click', () => {
+                const type = userTypeSelect.value;
+                const newLogin = newLoginInput.value.trim();
+                const newPassword = newPasswordInput.value.trim();
+
+                if (newLogin && newPassword) {
+                    credentials[type].login = newLogin;
+                    credentials[type].password = newPassword;
+                    saveData();
+                    logAction('Salvar Usuário', currentUserType, `Credenciais do usuário "${type}" salvas.`);
+                    alert(`Credenciais do usuário "${type}" salvas com sucesso!`);
+                } else {
+                    alert('Login e senha não podem estar vazios.');
+                }
+            });
+
+            developerTurmaSelect.addEventListener('change', (e) => {
+                const turma = e.target.value;
+                if (turma) {
+                    clearTurmaDataBtn.disabled = false;
+                } else {
+                    clearTurmaDataBtn.disabled = true;
+                }
+            });
+
+            clearTurmaDataBtn.addEventListener('click', () => {
+                const turma = developerTurmaSelect.value;
+                if (!turma) {
+                    alert('Selecione uma turma para apagar os dados.');
+                    return;
+                }
+
+                if (confirm(`Tem certeza que deseja apagar todos os dados da turma ${turma.toUpperCase()} (horário, sala, etc.)? Essa ação não pode ser desfeita.`)) {
+                    
+                    if (defaultHorarios[turma]) {
+                        horarios[turma] = JSON.parse(JSON.stringify(defaultHorarios[turma]));
+                        if (avisos[turma]) {
+                            delete avisos[turma];
+                        }
+                        saveData();
+                        logAction('Apagar Dados da Turma', currentUserType, `Dados da turma ${turma.toUpperCase()} apagados.`);
+                        alert(`Dados da turma ${turma.toUpperCase()} foram resetados para o padrão.`);
+                        devEditTurmaSelect.dispatchEvent(new Event('change'));
+                    } else {
+                        alert('Dados padrão para esta turma não encontrados. Nada foi alterado.');
+                    }
+                }
+            });
+
+            clearAuditLogBtn.addEventListener('click', () => {
+                if (confirm('Tem certeza que deseja limpar o histórico de auditoria?')) {
+                    auditLog = [];
+                    saveData();
+                    alert('Histórico de auditoria limpo com sucesso.');
+                }
+            });
+
+            simulateUserBtn.addEventListener('click', () => {
+                const userType = simulateUserTypeSelect.value;
+                loginContainer.classList.add('hidden');
+                
+                currentUserType = userType;
+                currentUserId = 'prof_joao'; // Simulação de ID
+                
+                logAction('Simular Login', 'Developer', `Sessão simulada como ${userType}.`);
+
+                if (userType === 'aluno') {
+                    mainContent.classList.remove('hidden');
+                    applyShineEffect();
+                } else if (userType === 'admin') {
+                    adminPanel.classList.remove('hidden');
+                    populateIncidents();
+                } else if (userType === 'professor') {
+                    teacherPanel.classList.remove('hidden');
+                    generateTeacherScheduleEditor(currentUserId, teacherScheduleBody);
+                    populateJournalTurmaSelect();
+                } else if (userType === 'diretor') {
+                    directorPanel.classList.remove('hidden');
+                    populateTeacherSelects();
+                    populateAlunoSelects();
+                    populateIncidents();
+                } else if (userType === 'developer') {
+                    developerPanel.classList.remove('hidden');
+                    populateDevTurmaAlunosSelect();
+                }
+            });
+
+            devNoticeTurmaSelect.addEventListener('change', (e) => {
+                const turma = e.target.value;
+                devNoticeTextarea.value = avisos[turma] || '';
+            });
+
+            saveDevNoticeBtn.addEventListener('click', () => {
+                const turma = devNoticeTurmaSelect.value;
+                const aviso = devNoticeTextarea.value.trim();
+                avisos[turma] = aviso;
+                saveData();
+                logAction('Salvar Aviso', currentUserType, `Aviso para ${turma.toUpperCase()} salvo.`);
+                alert(`Aviso para ${turma.toUpperCase()} salvo com sucesso!`);
+            });
+
+            toggleJsonEditor.addEventListener('click', (e) => {
+                e.preventDefault();
+                const isHidden = jsonEditorContainer.classList.contains('hidden');
+                if (isHidden) {
+                    horariosTextarea.value = JSON.stringify(horarios, null, 2);
+                    avisosTextarea.value = JSON.stringify(avisos, null, 2);
+                    credentialsTextarea.value = JSON.stringify(credentials, null, 2);
+                    teacherHorariosTextarea.value = JSON.stringify(teacherHorarios, null, 2);
+                    classJournalTextarea.value = JSON.stringify(classJournal, null, 2);
+                    incidentsTextarea.value = JSON.stringify(incidents, null, 2);
+                    jsonEditorContainer.classList.remove('hidden');
+                    toggleJsonEditor.textContent = 'Ocultar Modo Avançado';
+                } else {
+                    jsonEditorContainer.classList.add('hidden');
+                    toggleJsonEditor.textContent = 'Avançado: Editar JSON Direto';
+                }
+            });
+
+            saveJsonBtn.addEventListener('click', () => {
+                try {
+                    const novosHorarios = JSON.parse(horariosTextarea.value);
+                    const novosAvisos = JSON.parse(avisosTextarea.value);
+                    const novasCredentials = JSON.parse(credentialsTextarea.value);
+                    const novosTeacherHorarios = JSON.parse(teacherHorariosTextarea.value);
+                    const novoClassJournal = JSON.parse(classJournalTextarea.value);
+                    const novosIncidents = JSON.parse(incidentsTextarea.value);
+                    
+                    horarios = novosHorarios;
+                    avisos = novosAvisos;
+                    credentials = novasCredentials;
+                    teacherHorarios = novosTeacherHorarios;
+                    classJournal = novoClassJournal;
+                    incidents = novosIncidents;
+
+                    saveData();
+                    logAction('Salvar JSON', currentUserType, 'Todos os dados JSON foram atualizados.');
+                    alert('Dados JSON salvos com sucesso!');
+                } catch (e) {
+                    alert('Erro ao salvar os dados. Verifique a formatação do JSON.');
+                    console.error(e);
+                }
+            });
+
+            logoutBtn.addEventListener('click', showLogin);
+            adminLogoutBtn.addEventListener('click', showLogin);
+            teacherLogoutBtn.addEventListener('click', showLogin);
+            directorLogoutBtn.addEventListener('click', showLogin);
+            developerLogoutBtn.addEventListener('click', showLogin);
+
+            showLogin();
+        });
+    </script>
+</body>
+</html>
